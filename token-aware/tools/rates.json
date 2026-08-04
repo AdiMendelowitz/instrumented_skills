@@ -1,0 +1,35 @@
+{
+  "_comment": "TEMPLATE, INTENTIONALLY ALREADY EXPIRED. Every rate below is a placeholder (0.0), and 'expires' is set in the past on purpose so cost.py's own loader refuses to compute anything until you replace these values — that refusal is the intended first-run experience, not a bug. Verify every rate against https://www.anthropic.com/pricing, then set verified/expires/source/provenance for real.",
+  "verified": "2020-01-01",
+  "expires": "2020-01-08",
+  "source": "https://www.anthropic.com/pricing",
+  "units": "USD per million tokens",
+  "models": {
+    "<model-id>": {"in": 0.0, "out": 0.0, "cache_min_tokens": 0}
+  },
+  "multipliers": {
+    "cache_write_5m": 1.25,
+    "cache_write_1h": 2.0,
+    "cache_read": 0.1,
+    "batch": 0.5
+  },
+  "modifiers": {
+    "tool_system_overhead_tokens": null,
+    "region_us_only": null,
+    "long_context_threshold_tokens": null,
+    "long_context_in": null,
+    "long_context_out": null
+  },
+  "notes": {
+    "tool_system_overhead_tokens": "Tool-enabled requests may carry a fixed system-prompt overhead. Confirm the current figure on the tool-use docs page, then fill.",
+    "region_us_only": "Some providers report a premium for region-restricted routing against the global default. Confirm on the pricing page, then fill.",
+    "long_context_threshold_tokens": "Some models surcharge above a context threshold. Confirm per model on the pricing page, then fill.",
+    "cache_min_tokens": "Omit the key for any model whose minimum is neither documented nor measured; a guess must never be readable as fact."
+  },
+  "provenance": {
+    "models.rates": {"class": "unverified", "url": "", "date": ""},
+    "models.cache_min_tokens": {"class": "unverified", "url": "", "date": ""},
+    "multipliers": {"class": "unverified", "url": "", "date": ""},
+    "modifiers": {"class": "unverified", "url": "", "date": ""}
+  }
+}

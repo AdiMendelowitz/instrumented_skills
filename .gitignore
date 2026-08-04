@@ -1,0 +1,9 @@
+# Runtime output, never source
+token-aware/tools/cost_log.jsonl
+**/*.bak-*
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+
+# Critique logs, if a surface with a persistent filesystem writes them inside this repo
+.claude/critique-log/
