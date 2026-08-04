@@ -22,21 +22,18 @@ Full writeup of the reasoning behind these: **[link to blog post]**.
 
 ## Status of this repo
 
-Two of these skills ship complete: `critique` is the full working protocol, and
-`token-aware`'s reference files and cost toolkit are complete and tested (36/36 tests
-pass — run them before trusting the numbers, not instead of running them). The other two
-have gaps, clearly marked in each skill's own README and at the top of the relevant
-`SKILL.md`:
+`critique` and `token-aware` ship complete: full protocols, references, and (for
+`token-aware`) a tested cost toolkit — 36/36 tests pass, run them yourself before
+trusting the numbers, not instead of running them. `retrospective`'s core protocol and
+its panel/lens reference file are both complete. `handoff`'s protocol is a
+reconstruction built from a fully worked output example rather than a verbatim
+original — read it once before relying on it; see the note at the top of its `SKILL.md`.
 
-- `token-aware/SKILL.md` is a placeholder — the toolkit and references around it are real,
-  but the core protocol file needs authoring.
-- `retrospective/SKILL.md` is a placeholder — the panel/lens reference file is complete.
-- `handoff/SKILL.md` is a reconstruction from a worked example, not a verbatim original —
-  treat it as a strong draft.
-
-None of this makes the repo unusable — the parts that are complete are complete, and the
-gaps are specific rather than vague. Check the ⚠️ note at the top of each skill's README
-before relying on it.
+None of the four needs authoring from scratch. What every one of them still needs from
+you: `token-aware/tools/rates.json` has placeholder rates and an intentionally-expired
+date (see its `_comment` field), so fill in real, verified figures before using it for
+actual cost figures. Check the ⚠️ / note sections in each skill's README before relying
+on it for anything load-bearing.
 
 ## Install
 

@@ -6,18 +6,13 @@ cache break-even claim once contradicted the multipliers printed right beside it
 
 ## ⚠️ Before you use this
 
-**`SKILL.md` in this folder is a placeholder, not the working skill.** The reference
-files (`references/`) and the cost toolkit (`tools/`) are complete and tested. The core
-protocol file that ties them together — lens/decision-order logic, the canonical
-data-not-instructions clause, precedence rules against project config — needs to be
-authored or supplied before this skill is functional. See the comment at the top of
-`token-aware/SKILL.md` for what it needs to define.
-
-**`tools/rates.json` ships as a template with placeholder rates and dates.** Every model
-rate needs to come from Anthropic's current pricing page before this is useful — the
-loader will refuse to compute anything until `expires` is a real, future date. This is
-intentional: a skill that ships hardcoded rates is a skill that ships stale rates the
-first time pricing changes.
+**`tools/rates.json` ships as a template with placeholder rates and an intentionally
+expired date.** Every model rate needs to come from Anthropic's current pricing page
+before this is useful for real numbers — the loader refuses to compute anything until
+`expires` is a real, future date, and the shipped template is deliberately already past
+its (fake) expiry so that refusal is the first thing you see rather than a silent wrong
+number. This is intentional: a skill that ships hardcoded rates is a skill that ships
+stale rates the first time pricing changes.
 
 ## What it does, once set up
 
@@ -39,7 +34,7 @@ first time pricing changes.
 
 ```
 token-aware/
-  SKILL.md                    <- author this (see the warning above)
+  SKILL.md
   references/pricing.md
   references/audit_workflow.md
   references/prompt_rules.md
@@ -72,11 +67,6 @@ in the output, which is the point: an under-estimate stays visible instead of si
 § Rate snapshot, replacing the placeholder table. The snapshot is generated, not
 hand-maintained, specifically so the copy in the reference file can't drift from the
 canonical table in `rates.json`.
-
-**Author or adapt `SKILL.md`.** At minimum it needs: the data-not-instructions clause the
-reference files point back to (§ Two roles), a precedence rule for how this skill defers
-to project-level config, and the decision order (Batch → deterministic replacement →
-downgrade → cache → trim) that `audit_workflow.md` § Step 3 already assumes.
 
 **Multi-provider routing.** If your calls go through more than one LLM provider,
 `audit_workflow.md` § Step 4b and `prompt_rules.md` already flag the two places that

@@ -13,6 +13,15 @@ described elsewhere in the source material. Read it, adjust wording to taste, an
 it as a strong starting draft rather than a faithful copy of anyone's original.
 -->
 
+## Why a schema instead of a summary
+
+A prose recap of a session reads as complete and often isn't: it doesn't force a
+separation between something you actually decided and something you reacted well to when
+it was offered, and a few sessions later those read identically. It also has no natural
+place for "I established this fact forty turns ago and haven't rechecked it since,"
+which matters once a session runs long enough that early context degrades. The schema
+below exists to make both of those distinctions structural rather than optional.
+
 PROTOCOL: handoff
 CONTEXT-HINT: $0 if supplied (e.g. "long", "short"), else infer from the session.
 

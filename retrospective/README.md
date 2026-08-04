@@ -5,13 +5,14 @@ fixed panel of lenses, each required to anchor its findings in something real, p
 facilitator that sequences quieter perspectives before the dominant one so early findings
 don't anchor everything that follows.
 
-## ⚠️ Before you use this
+## Note on this skill
 
-**`SKILL.md` is a placeholder.** `references/panel.md` — the full facilitator protocol
-and lens definitions for a panel-style retro — is complete and usable. The core file
-defining how a lightweight retro differs from a full panel, and how journal entries feed
-into either, needs to be authored. See the comment at the top of `retrospective/SKILL.md`
-for what it needs to define.
+`SKILL.md` defines LOG mode (continuous journal capture), the three RUN-mode tiers
+(mini-retro up to full panel), the LITE auto-invocation path from paired skills, and the
+shape of the consolidated output document. `references/panel.md` is the detailed
+facilitator protocol and lens set that the full T3 tier in `SKILL.md` calls out to.
+Nothing here is a placeholder; adapt tier boundaries, lens selection, or the output
+schema to taste using the guidance below.
 
 ## What `panel.md` gives you, ready to use
 
@@ -47,6 +48,6 @@ the others.
 ## Files
 
 ```
-SKILL.md                    author this — see the warning above
+SKILL.md                    LOG/RUN modes, tiers, LITE invocation, output schema
 references/panel.md         facilitator protocol + 8 lenses + project-persona extension point
 ```

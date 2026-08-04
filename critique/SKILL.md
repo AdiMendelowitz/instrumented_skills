@@ -6,6 +6,22 @@ disable-model-invocation: true
 allowed-tools: Read Write Grep Glob Bash(wc *) Bash(git diff *) Bash(jq *)
 ---
 
+## Overview
+
+A review that doesn't remember its own prior findings pays for the same discovery every
+time it runs. This skill's central mechanism is reconciliation: every run logs what it
+found, and the *next* run on the same target reads that log before doing anything else,
+so a defect that's already been diagnosed gets graded FIXED, STILL-PRESENT, or WITHDRAWN
+instead of being rediscovered from scratch. The other load-bearing idea is that a patch
+isn't a fix until someone promotes it — the log tracks that explicitly, so an unpromoted
+patch doesn't silently masquerade as new findings on the next pass.
+
+Lenses are selected by what the target actually is (code, a process document, an
+architecture doc, and so on — see the bundle table in § P2), five of them always run
+regardless of target type, and every finding needs an anchor: a quote, a line reference,
+or a named absence. A lens with nothing to anchor says so; manufacturing a finding to
+look thorough is treated as a failure mode, not diligence.
+
 PROTOCOL: critique v2.5
 TARGET: $0
 PURPOSE: $1 if supplied, else from the target, else ask once in one line before proceeding.
