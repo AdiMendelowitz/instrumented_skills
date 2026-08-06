@@ -29,20 +29,23 @@ CONTEXT-HINT: $0 if supplied (e.g. "long", "short"), else infer from the session
 
 Deliver one document, pipe- or colon-delimited by section, no prose framing before or
 after it. Header line first: `HANDOFF v<n> | <date> | supersedes: <prior handoff id, or
-"none"> | session-length: <short|medium|long>`.
+"none"> | session-length: <short|medium|long>`. Immediately below the header, an `OBJ:`
+line states the session's objective in one sentence: what the next session is resuming
+toward.
 
 Then, in this order, every section present even if empty (mark an empty section
 `none`):
 
 ```
-STATE         current, verifiable facts about the artifacts themselves — file paths,
+OBJ           one sentence: what the next session is resuming toward (sits under the header)
+STATE         current, verifiable facts about the artifacts themselves: file paths,
               versions, line/byte counts, what's installed where. Not what you believe
               is true; what you can point to.
 DECIDED       things actually committed to. The bar for landing here is high: a
               suggestion the person reacted well to is not a decision. Only what was
               explicitly chosen goes here.
-CONSTRAINTS   hard limits on the solution space — technical, organizational, or
-              personal — that any future work in this context must respect.
+CONSTRAINTS   hard limits on the solution space (technical, organisational, or
+              personal) that any future work in this context must respect.
 PROPOSED      suggestions on the table, not yet committed. Where an idea originated as
               a proposal and the person hasn't explicitly confirmed it, it stays here
               even after several sessions, rather than migrating to DECIDED by drift.
@@ -80,7 +83,7 @@ FIRST         the exact next action. Specific enough that the next session can e
   smallest action that would resolve it.
 - **This document supersedes prose summaries for continuity purposes.** Where this skill
   is available, prefer writing a handoff over a free-text "here's where we left off"
-  recap — the schema exists specifically because prose lets a decision and a suggestion
+  recap. The schema exists specifically because prose lets a decision and a suggestion
   read identically a few sessions later.
 
 ## Handoff to review
@@ -88,4 +91,4 @@ FIRST         the exact next action. Specific enough that the next session can e
 Where a review or critique skill is available in the same environment, a session ending
 with unresolved SEV1/SEV2-equivalent issues in PATTERN or OPEN should note that a review
 pass is warranted, rather than silently deferring it. This skill does not perform the
-review itself — it only flags that one may be due.
+review itself; it only flags that one may be due.

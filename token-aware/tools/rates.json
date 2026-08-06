@@ -1,5 +1,5 @@
 {
-  "_comment": "TEMPLATE, INTENTIONALLY ALREADY EXPIRED. Every rate below is a placeholder (0.0), and 'expires' is set in the past on purpose so cost.py's own loader refuses to compute anything until you replace these values — that refusal is the intended first-run experience, not a bug. Verify every rate against https://www.anthropic.com/pricing, then set verified/expires/source/provenance for real.",
+  "_comment": "TEMPLATE, INTENTIONALLY ALREADY EXPIRED. Every rate below is a placeholder (0.0), and 'expires' is set in the past on purpose so cost.py's own loader refuses to compute anything until you replace these values. That refusal is the intended first-run experience, not a bug. Verify every rate against https://www.anthropic.com/pricing, then set verified/expires/source/provenance for real.",
   "verified": "2020-01-01",
   "expires": "2020-01-08",
   "source": "https://www.anthropic.com/pricing",

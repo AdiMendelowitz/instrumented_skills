@@ -4,7 +4,7 @@ These tests are self-contained: an autouse fixture points cost.RATES_PATH and
 cost.LOG_PATH at a temp file with known test values, so the suite passes regardless of
 what the shipped tools/rates.json template has been filled in with. Fill in rates.json
 with your own verified figures for actual use; do not edit the test values below to
-match — they exist to check the arithmetic, not to track current pricing.
+match. They exist to check the arithmetic, not to track current pricing.
 """
 
 from __future__ import annotations

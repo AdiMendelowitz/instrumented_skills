@@ -1,5 +1,6 @@
 # Runtime output, never source
 token-aware/tools/cost_log.jsonl
+**/*.kbindex.json
 **/*.bak-*
 **/__pycache__/
 **/*.pyc

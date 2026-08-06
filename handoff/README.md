@@ -2,7 +2,7 @@
 
 A structured end-of-session state snapshot, in place of a prose "here's where we left
 off" recap. The schema exists because prose doesn't force you to separate a decision you
-made from a suggestion you reacted well to — a few sessions later, those read the same,
+made from a suggestion you reacted well to. A few sessions later, those read the same,
 and a plan you never actually committed to starts getting treated as settled.
 
 ## ⚠️ Note on this file
@@ -18,15 +18,16 @@ in use before writing your own real one.
 ## The schema
 
 ```
-STATE          verifiable facts about the artifacts — paths, versions, counts
-DECIDED        things actually committed to (high bar — a liked suggestion isn't a decision)
+OBJ            one sentence: what the next session is resuming toward (sits under the header)
+STATE          verifiable facts about the artifacts: paths, versions, counts
+DECIDED        things actually committed to (high bar: a liked suggestion isn't a decision)
 CONSTRAINTS    hard limits the next session's work must respect
 PROPOSED       suggestions on the table, not yet committed
 REJECTED       options considered and dropped, with why
 OPEN           questions blocking a specific next step, naming what they block
 UNVERIFIED     claims carried forward that were never independently rechecked
 PATTERN        recurring issues, with an occurrence count
-FIRST          the exact next action — singular, specific enough to execute directly
+FIRST          the exact next action, singular, specific enough to execute directly
 ```
 
 ## Why this shape
@@ -38,7 +39,7 @@ them in separate sections means a future session (or a future you) can tell whic
 which without re-reading the whole conversation for tone.
 
 **UNVERIFIED** exists for long sessions specifically. Facts established early in a long
-conversation get less reliable as the conversation goes on — not because anyone's being
+conversation get less reliable as the conversation goes on, not because anyone's being
 careless, but because context degrades. This section is where a carried-forward claim
 gets flagged as carried-forward, instead of silently being restated as current fact in
 the next handoff.
@@ -50,17 +51,17 @@ is what makes that visible without you having to remember it yourself.
 
 ## Adapting this skill
 
-The nine sections are a strong default, not a fixed requirement — if your work doesn't
+The nine sections are a strong default, not a fixed requirement. If your work doesn't
 produce REJECTED-worthy decisions often, for instance, you can leave that section
 consistently `none` without removing it from the schema (consistency across handoffs
 matters more than trimming unused sections). If you pair this with a review or critique
-skill, the "Handoff to review" section in `SKILL.md` is the connection point — it flags
+skill, the "Handoff to review" section in `SKILL.md` is the connection point: it flags
 when a review pass is due without performing one itself, so the two skills stay
 decoupled.
 
 ## Files
 
 ```
-SKILL.md              the protocol (reconstructed — see the warning above)
+SKILL.md              the protocol (reconstructed, see the warning above)
 example-handoff.md    a sanitized worked example for a generic web app project
 ```

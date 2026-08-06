@@ -1,4 +1,4 @@
-# Pricing and caching mechanics | v1.3 | template — re-verify before use
+# Pricing and caching mechanics | v1.3 | template, re-verify before use
 
 Canonical rates live in `tools/rates.json`. The table below is a generated snapshot; regenerate with `python tools/cost.py render`. Every fact carries a source class: `first-party` (Anthropic docs, cookbook, pricing page), `measured` (local probe), `secondary` (aggregator, used only where no first-party statement exists).
 
@@ -18,18 +18,18 @@ number.
 
 *This table is an example shape from the snapshot this skill was built around. Run
 `python tools/cost.py render` after filling in `tools/rates.json` with current figures
-from Anthropic's pricing page — do not publish or rely on the numbers below as current.*
+from Anthropic's pricing page. Do not publish or rely on the numbers below as current.*
 
 | Model | Input | Output | Min cacheable |
 |---|---|---|---|
 | `<model-id>` | $x.xx | $x.xx | n |
 | `<model-id>` | $x.xx | $x.xx | n |
 
-Source: https://www.anthropic.com/pricing. Multipliers: cache_write_5m 1.25x, cache_write_1h 2.0x, cache_read 0.1x, batch 0.5x — these multiplier *ratios* have been stable across model generations; the base per-token rates have not, so verify rates independently of multipliers.
+Source: https://www.anthropic.com/pricing. Multipliers: cache_write_5m 1.25x, cache_write_1h 2.0x, cache_read 0.1x, batch 0.5x. These multiplier *ratios* have been stable across model generations; the base per-token rates have not, so verify rates independently of multipliers.
 
 **What this does to model-tier decisions.** Output tokens typically cost several times
 input tokens across current model families, so reducing output length is often a bigger
-lever than moving to a cheaper tier — verify the current ratio in your rate table before
+lever than moving to a cheaper tier. Verify the current ratio in your rate table before
 treating this as settled, since it changes as pricing changes.
 
 **Tokenizer caution.** A character-based token estimate calibrated on one model
@@ -39,7 +39,7 @@ estimation constant against the current model rather than carrying it forward.
 ## Batch API, check this first
 
 Asynchronous processing within a defined window (commonly 24 hours) at a discount on both
-input and output — verify the current discount rate. Stacks with caching. No prompt
+input and output; verify the current discount rate. Stacks with caching. No prompt
 change, no quality risk, no format change. For any scheduled or non-interactive workload
 this is typically the largest single lever available and it requires the least work.
 
@@ -49,7 +49,7 @@ It does not apply to anything a user waits on synchronously.
 
 Caching is prefix-based over tools, then system, then messages, up to and including the block marked with `cache_control`. A single character differing before the breakpoint is a miss.
 
-**Minimum cacheable length is model-dependent and is the most common silent failure.** Verify the current minimum per model family in Anthropic's cookbook — it has differed between model families in the past. Below the threshold the request succeeds and nothing is cached, silently. A pipeline that applies one blanket minimum across model tiers can cache nothing on the tier with the higher requirement.
+**Minimum cacheable length is model-dependent and is the most common silent failure.** Verify the current minimum per model family in Anthropic's cookbook; it has differed between model families in the past. Below the threshold the request succeeds and nothing is cached, silently. A pipeline that applies one blanket minimum across model tiers can cache nothing on the tier with the higher requirement.
 
 **Verifying a cache actually works.** Cache diagnostics (beta, where available) has the API compare consecutive requests and report exactly where the prefix diverged; reach for it first if your account has access. Failing that, send the request and read `cache_creation_input_tokens` on the first call and `cache_read_input_tokens` after. Zero reads means the breakpoint was discarded or the prefix changed. Record the answer per model. [measured]
 
@@ -59,11 +59,11 @@ Caching is prefix-based over tools, then system, then messages, up to and includ
 - The lookback for automatic matching checks a limited number of previous content-block boundaries before your breakpoint. It does not scan backwards for stable content and cache it: it only finds entries earlier requests already wrote, and writes happen only at breakpoints. A breakpoint on a block that changes every request (a timestamp, the user message) writes a fresh cache every time and never reads. Move the marker to the last block that stays identical, and add an earlier marker once a prompt exceeds the lookback window.
 - Tool definitions typically render first in the prefix, so a breakpoint on the last tool caches the tool block, and changing any tool invalidates system and messages downstream.
 - Cache validity breaks on more than text: tool choice, image usage, thinking configuration, and effort settings must stay consistent across calls.
-- Server-side tool use can insert its own automatic breakpoint at a different TTL than your own markers use — check where those writes get logged so they aren't silently dropped from your accounting.
+- Server-side tool use can insert its own automatic breakpoint at a different TTL than your own markers use, so check where those writes get logged so they aren't silently dropped from your accounting.
 
-**Automatic caching.** Where available, a top-level `cache_control` field can cache the last cacheable block and slide the breakpoint forward as the conversation grows. This is often the right default for multi-turn work and removes most manual breakpoint management — verify current availability and behavior for your model.
+**Automatic caching.** Where available, a top-level `cache_control` field can cache the last cacheable block and slide the breakpoint forward as the conversation grows. This is often the right default for multi-turn work and removes most manual breakpoint management; verify current availability and behaviour for your model.
 
-**Hit rate as a monitor.** A hit rate well below expectation on long-context work usually signals a misplaced breakpoint. [secondary — a rule of thumb, not a documented threshold]
+**Hit rate as a monitor.** A hit rate well below expectation on long-context work usually signals a misplaced breakpoint. [secondary, a rule of thumb, not a documented threshold]
 
 **Prices are multipliers on base input.** Work out your own break-even point from the multipliers in `rates.json` rather than a rule of thumb: compare (one write + n reads) against (n+1 uncached sends) on the cached prefix, and solve for the smallest n where caching wins. `tools/cost.py cache_breakeven_reads()` computes this. Output tokens bill at full rate regardless of caching on the input side.
 
@@ -121,4 +121,4 @@ inserted its own automatic breakpoint at a different TTL. Where a nested cache-c
 object is present in the usage response, read its per-TTL fields and log both, falling
 back to the flat field only when the nested object is absent.
 
-Truncation warning: see `prompt_rules.md` § max_tokens, which owns that rule.
+Truncation warning: see the `max_tokens` rule in `prompt_rules.md`, which owns it.

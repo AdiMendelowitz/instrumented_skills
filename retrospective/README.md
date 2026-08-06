@@ -1,6 +1,6 @@
 # retrospective
 
-Structured retrospectives that compound instead of restarting from zero each time — a
+Structured retrospectives that compound instead of restarting from zero each time: a
 fixed panel of lenses, each required to anchor its findings in something real, plus a
 facilitator that sequences quieter perspectives before the dominant one so early findings
 don't anchor everything that follows.
@@ -17,7 +17,7 @@ schema to taste using the guidance below.
 ## What `panel.md` gives you, ready to use
 
 - A facilitator role that runs the meeting, sequences lenses (quietest first, so it
-  doesn't anchor on the loudest), and owns synthesizing the debate into output — but
+  doesn't anchor on the loudest), and owns synthesising the debate into output, but
   contributes no findings of its own.
 - Eight standing lenses (end-user, domain reviewer, ML expert, tech lead, finance,
   product, process archivist, pre-mortem), each capped at 3 anchored findings, each
@@ -30,7 +30,7 @@ schema to taste using the guidance below.
 
 ## Adapting this skill
 
-**The finance lens's anchoring rule is written to be tool-agnostic** — it names
+**The finance lens's anchoring rule is written to be tool-agnostic.** It names
 "a paired skill's proxy stats" as one admissible source, using the `critique` skill's
 counters block as an example, but doesn't require that skill to be installed. If you use
 a different review or logging tool, the lens still works: point it at whatever proxy
@@ -41,8 +41,8 @@ metrics your own tooling produces, or leave it to fall back to timestamp-based t
 of `panel.md`. It then competes for a lens slot like any standing lens, under the same
 3-finding and anchors-mandatory rules.
 
-**To change the lens set itself**, edit `panel.md` directly — each lens is a self-
-contained block of standing questions; adding, removing, or rewording one doesn't affect
+**To change the lens set itself**, edit `panel.md` directly. Each lens is a self-contained
+block of standing questions, and adding, removing, or rewording one doesn't affect
 the others.
 
 ## Files

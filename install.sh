@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# claude-skills install script (macOS / Linux)
+# instrumented_skills install script (macOS / Linux)
 # Run from the root of this repo. Copies each selected skill folder to
 # ~/.claude/skills/<name>, archiving whatever it replaces first.
 #
@@ -16,7 +16,7 @@ STAMP="$(date +%Y%m%d-%H%M)"
 if [ "$#" -gt 0 ]; then
     SKILLS=("$@")
 else
-    SKILLS=(critique token-aware retrospective handoff)
+    SKILLS=(critique token-aware retrospective handoff kb-search)
 fi
 
 echo "Preflight:"
@@ -33,6 +33,13 @@ if [ "${#missing[@]}" -gt 0 ]; then
 fi
 echo "  all requested skill folders present: ${SKILLS[*]}"
 
+# kb-search defers its grep-first gating rule to token-aware/references/search_policy.md.
+if printf '%s\n' "${SKILLS[@]}" | grep -qx "kb-search" && ! printf '%s\n' "${SKILLS[@]}" | grep -qx "token-aware"; then
+    echo "  NOTE: installing kb-search without token-aware. Its search policy" >&2
+    echo "        (token-aware/references/search_policy.md) is a hard dependency;" >&2
+    echo "        install token-aware too, or kb-search has no gating rule." >&2
+fi
+
 mkdir -p "$DEST_DIR"
 echo ""
 echo "Installing to $DEST_DIR :"
@@ -41,6 +48,13 @@ for s in "${SKILLS[@]}"; do
     to="$DEST_DIR/$s"
     if [ -d "$to" ]; then
         cp -R "$to" "$to.bak-$STAMP"
+        # Gate the removal on the backup existing, so a failed archive never
+        # deletes an existing install without a copy to fall back on.
+        if [ ! -d "$to.bak-$STAMP" ]; then
+            echo "  ERROR: backup of $s failed; leaving existing install untouched." >&2
+            exit 1
+        fi
+        rm -rf "$to"
         echo "  archived existing $s -> $s.bak-$STAMP"
     fi
     cp -R "$from" "$to"
@@ -49,9 +63,8 @@ done
 
 echo ""
 echo "Done. Read each skill's README.md for setup steps that can't be scripted"
-echo "(filling in token-aware/tools/rates.json, authoring the placeholder SKILL.md"
-echo "files flagged in token-aware and retrospective, reviewing handoff's"
-echo "reconstructed SKILL.md)."
+echo "(filling in token-aware/tools/rates.json with current, verified rates, and"
+echo "reviewing handoff's reconstructed SKILL.md before relying on it)."
 
 if printf '%s\n' "${SKILLS[@]}" | grep -qx "token-aware"; then
     echo ""

@@ -11,8 +11,6 @@ Subcommands: cost, breakeven, compare, estimate, verify, render, cpd.
 Python 3.10+, standard library only.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys

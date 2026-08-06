@@ -1,4 +1,4 @@
-# claude-skills install script (Windows / PowerShell)
+# instrumented_skills install script (Windows / PowerShell)
 # Run from the root of this repo (or point -Source at it). Copies each selected skill
 # folder to %USERPROFILE%\.claude\skills\<name>, archiving whatever it replaces first.
 #
@@ -11,7 +11,7 @@
 #   powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 param(
-    [string[]]$Skills = @("critique", "token-aware", "retrospective", "handoff"),
+    [string[]]$Skills = @("critique", "token-aware", "retrospective", "handoff", "kb-search"),
     [string]$Source = $PSScriptRoot,
     [string]$Destination = "$env:USERPROFILE\.claude\skills"
 )
@@ -28,23 +28,36 @@ if ($missing.Count -gt 0) {
 }
 Write-Host "  all requested skill folders present: $($Skills -join ', ')"
 
+# kb-search defers its grep-first gating rule to token-aware\references\search_policy.md.
+if (($Skills -contains "kb-search") -and -not ($Skills -contains "token-aware")) {
+    Write-Host "  NOTE: installing kb-search without token-aware. Its search policy" -ForegroundColor Yellow
+    Write-Host "        (token-aware\references\search_policy.md) is a hard dependency; install token-aware too."
+}
+
+New-Item -ItemType Directory -Force -Path $Destination | Out-Null
 Write-Host "`nInstalling to $Destination :"
 foreach ($skill in $Skills) {
     $from = Join-Path $Source $skill
     $to = Join-Path $Destination $skill
     if (Test-Path $to) {
-        Copy-Item $to "$to.bak-$stamp" -Recurse -Force
+        $backup = "$to.bak-$stamp"
+        Copy-Item $to $backup -Recurse -Force
+        # Gate the removal on the backup existing, so a failed archive never
+        # deletes an existing install without a copy to fall back on.
+        if (-not (Test-Path $backup)) {
+            Write-Host "  ERROR: backup of $skill failed; leaving existing install untouched." -ForegroundColor Red
+            exit 1
+        }
+        Remove-Item $to -Recurse -Force
         Write-Host "  archived existing $skill -> $skill.bak-$stamp"
     }
-    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
     Copy-Item $from $to -Recurse -Force
     Write-Host "  installed $skill"
 }
 
 Write-Host "`nDone. Read each skill's README.md for setup steps that can't be scripted"
-Write-Host "(filling in token-aware/tools/rates.json, authoring the placeholder SKILL.md"
-Write-Host "files flagged in token-aware and retrospective, reviewing handoff's"
-Write-Host "reconstructed SKILL.md)."
+Write-Host "(filling in token-aware\tools\rates.json with current, verified rates, and"
+Write-Host "reviewing handoff's reconstructed SKILL.md before relying on it)."
 
 if ($Skills -contains "token-aware") {
     Write-Host "`nRunning token-aware's test suite as a sanity check:"

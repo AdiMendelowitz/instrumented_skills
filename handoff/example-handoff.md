@@ -5,7 +5,7 @@ STATE
   src/reports/export.py | 210L | CSV export for datasets under 10k rows, no queue
   src/reports/routes.py | added POST /api/reports/export, returns 200 with inline file
   tests/test_export.py | 14 tests, all passing, covers empty dataset and header-escaping
-  docs/api.md | export endpoint documented, large-dataset behavior not yet documented
+  docs/api.md | export endpoint documented, large-dataset behaviour not yet documented
 
 DECIDED
   exports over 10k rows return 413 for now rather than timing out silently
