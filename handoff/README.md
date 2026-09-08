@@ -1,13 +1,36 @@
 # handoff
 
-A structured end-of-session state snapshot, in place of a prose "here's where we left
-off" recap. The schema exists because prose doesn't force you to separate a decision you
-made from a suggestion you reacted well to. A few sessions later, those read the same,
-and a plan you never actually committed to starts getting treated as settled.
+**A schema for what happened, so "here's where we left off" stops meaning "trust me."**
 
-`SKILL.md` here is the real file, not a reconstruction, verified against its own prior
-session history. `example-handoff.md` is a sanitized worked example that passes the
-linter below.
+A structured end-of-session state snapshot, in place of a prose recap. The schema exists
+because prose doesn't force you to separate a decision you made from a suggestion you
+reacted well to. A few sessions later, those read the same, and a plan you never actually
+committed to starts getting treated as settled.
+
+| | |
+|---|---|
+| **Protocol** | v3.0, 8 labeled sections, pipe-delimited fields, no prose |
+| **Toolkit** | `tools/measure_savings.py` (lint, state-check, compare); `tools/session_watch.py` (optional session-length hook) |
+| **Tests** | 55 pass |
+| **Depends on** | nothing (PATTERN sourcing and the closing review step pair optionally with `critique`/`retrospective`) |
+| **Ships** | complete |
+
+`example-handoff.md` is a sanitized worked example that passes the linter below.
+
+## From a long session to the next one acting correctly on turn one
+
+```mermaid
+flowchart LR
+    S[Session runs long] -->|session_watch.py<br/>optional hook| N[Turn-count nudge]
+    N --> W[Write HANDOFF snapshot<br/>STATE, DECIDED, PROPOSED...]
+    W -->|paste as first message| R[Next session]
+    R --> RS[Restate STATE + OBJ<br/>before acting]
+    W -.->|purpose: OBJ| C[review/critique skill<br/>on the snapshot itself]
+```
+
+Two loops close here: the next session verifies it actually absorbed the state before
+acting, and the snapshot itself gets reviewed rather than trusted on the strength of its
+own formatting.
 
 ## The schema
 
@@ -115,6 +138,11 @@ python -m pytest -q          # 55 tests across both tools
 echo '{"transcript_path":"/path/to/transcript.jsonl","session_id":"test"}' \
   | HANDOFF_WARN_TURNS=1 python3 tools/session_watch.py
 ```
+
+Swap in a real transcript path: Claude Code writes them under
+`~/.claude/projects/<project-slug>/*.jsonl`, and any real one works. The placeholder path
+above produces the same silent, exit-0 output as a broken install, which is exactly the
+ambiguity the next paragraph describes.
 
 The hook fails open on every error path (malformed input, missing transcript,
 unwritable state directory), because a hook that raises could interfere with prompt

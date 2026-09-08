@@ -3,7 +3,7 @@ name: handoff
 description: Write a state snapshot at the end of a session so the next conversation resumes with full context instead of a transcript summary. Separates decisions from suggestions, records recurring corrections, carries unverified claims forward, and hands off to a review/critique skill for follow-up.
 argument-hint: [next-objective]
 disable-model-invocation: true
-allowed-tools: Read Glob Bash(wc *)
+allowed-tools: Read Glob Bash(wc *) Bash(python *) Bash(python3 *)
 ---
 
 PROTOCOL: handoff v3.0
@@ -11,6 +11,11 @@ OBJECTIVE: $ARGUMENTS
 
 Write a state snapshot for the next conversation. This is a resumption artifact, not a
 summary. Optimize for the next session acting correctly on turn one.
+
+This skill has no file-write access: the finished snapshot is this response's text, not
+a saved file. Paste it as the first message of the next session, or save it yourself
+under a name you can cite in `supersedes` later. The restatement rule under Rules is what
+fires once that pasted text lands in the next session's context.
 
 ## Format
 

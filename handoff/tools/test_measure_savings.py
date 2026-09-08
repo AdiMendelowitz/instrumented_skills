@@ -151,7 +151,7 @@ def test_state_check_passes_on_matching_file(tmp_path: Path):
     # so the byte count computed below from the in-memory string matches what is
     # actually written to disk on every platform. Without this, Path.write_text's
     # default text-mode write inflates the on-disk size by one byte per line on
-    # Windows, and state_check() -- correctly reading real bytes off disk -- reports
+    # Windows, and state_check(), which correctly reads real bytes off disk, reports
     # a mismatch this fixture itself introduced.
     f.write_text(content, encoding="utf-8", newline="")
     n_lines = content.count("\n")
