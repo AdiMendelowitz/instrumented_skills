@@ -1,94 +1,84 @@
 ---
 name: handoff
 description: Write a state snapshot at the end of a session so the next conversation resumes with full context instead of a transcript summary. Separates decisions from suggestions, records recurring corrections, carries unverified claims forward, and hands off to a review/critique skill for follow-up.
-argument-hint: [optional: session-length hint]
+argument-hint: [next-objective]
+disable-model-invocation: true
+allowed-tools: Read Glob Bash(wc *)
 ---
 
-<!--
-NOTE: this SKILL.md is a reconstruction, not the verbatim original. The source project
-files available when this repo was scaffolded included a fully worked *example* of this
-skill's output (a real handoff document) but not the protocol file itself. The schema and
-field semantics below are reverse-engineered from that example and from how it was
-described elsewhere in the source material. Read it, adjust wording to taste, and treat
-it as a strong starting draft rather than a faithful copy of anyone's original.
--->
+PROTOCOL: handoff v3.0
+OBJECTIVE: $ARGUMENTS
 
-## Why a schema instead of a summary
+Write a state snapshot for the next conversation. This is a resumption artifact, not a
+summary. Optimize for the next session acting correctly on turn one.
 
-A prose recap of a session reads as complete and often isn't: it doesn't force a
-separation between something you actually decided and something you reacted well to when
-it was offered, and a few sessions later those read identically. It also has no natural
-place for "I established this fact forty turns ago and haven't rechecked it since,"
-which matters once a session runs long enough that early context degrades. The schema
-below exists to make both of those distinctions structural rather than optional.
+## Format
 
-PROTOCOL: handoff
-CONTEXT-HINT: $0 if supplied (e.g. "long", "short"), else infer from the session.
-
-## Contract
-
-Deliver one document, pipe- or colon-delimited by section, no prose framing before or
-after it. Header line first: `HANDOFF v<n> | <date> | supersedes: <prior handoff id, or
-"none"> | session-length: <short|medium|long>`. Immediately below the header, an `OBJ:`
-line states the session's objective in one sentence: what the next session is resuming
-toward.
-
-Then, in this order, every section present even if empty (mark an empty section
-`none`):
+Labeled lines, not paragraphs. No markdown headers, no bullets, no connective prose. One
+fact per line, pipe-delimited fields, noun phrases over sentences. Sentences appear only
+where a decision turned on specific wording, in which case quote the user directly. Omit
+an empty section rather than padding it. Estimated 30 to 40 percent fewer tokens than
+prose for the same content; unmeasured. See `tools/measure_savings.py --compare` to turn
+this into a measured figure against your own real snapshots, and replace this sentence
+with the result once you have one.
 
 ```
-OBJ           one sentence: what the next session is resuming toward (sits under the header)
-STATE         current, verifiable facts about the artifacts themselves: file paths,
-              versions, line/byte counts, what's installed where. Not what you believe
-              is true; what you can point to.
-DECIDED       things actually committed to. The bar for landing here is high: a
-              suggestion the person reacted well to is not a decision. Only what was
-              explicitly chosen goes here.
-CONSTRAINTS   hard limits on the solution space (technical, organisational, or
-              personal) that any future work in this context must respect.
-PROPOSED      suggestions on the table, not yet committed. Where an idea originated as
-              a proposal and the person hasn't explicitly confirmed it, it stays here
-              even after several sessions, rather than migrating to DECIDED by drift.
-REJECTED      options considered and explicitly dropped, one line each on why, so a
-              future session doesn't re-propose something already ruled out.
-OPEN          questions that block a specific next step. Each one names what it
-              blocks, not just that it's unresolved.
-UNVERIFIED    claims carried forward from earlier in the session (or from a prior
-              handoff) that were never independently checked. This section exists
-              specifically to survive context degradation: facts established forty
-              turns ago in a long session get fuzzy, and this is where "this was true
-              earlier, I haven't rechecked it" lives instead of being restated as
-              settled fact.
-PATTERN       recurring issues or corrections, each with an occurrence count. A thing
-              that's happened once is a note; a thing that's happened three times
-              across sessions is a pattern, and the count is what makes that visible.
-FIRST         the exact next action. Specific enough that the next session can execute
-              it without re-reading the rest of the handoff first.
+HANDOFF v3.0 | <date> | supersedes: <prior handoff id or none> | session-length: <short|long>
+OBJ: <next objective, one line>
+STATE            <=8 lines, paths first, then installs, then running processes
+  <path> | v<x> | <n>L <n>B | <purpose, 6 words max>
+  <package/tool> | <version or commit> | installed <where>
+  <process/service> | <status: running|stopped> | <what it's for, 6 words max>
+DECIDED          <=10 lines, user's explicit choices only, no reasoning
+  <decision>
+PROPOSED         <=6 lines, assistant recommendations not yet accepted
+  <item> | origin-uncertain (only when genuinely unclear)
+REJECTED         <=5 lines
+  <item> | <reason, 5 words max>
+OPEN             <=5 lines, ranked by what blocks OBJ
+  <question> | blocks: <what>
+UNVERIFIED       <=5 lines
+  <claim> | <why unmeasured>
+PATTERN          <=3 lines, corrections that recurred this session
+  <correction> | occurrences: <n>
+FIRST            1 line
+  <single executable action>
 ```
 
 ## Rules
 
-- **Decision vs. suggestion is the load-bearing distinction.** Before writing anything
-  into DECIDED, check: did the person explicitly commit to this, or did they react
-  positively to something offered? A positive reaction to a proposal is not a decision.
-  When in doubt, it goes in PROPOSED.
-- **STATE is for facts you can currently verify**, not facts you established at some
-  earlier point in the session and are assuming still hold. Where a STATE-like fact
-  hasn't been rechecked recently, it belongs in UNVERIFIED instead.
-- **PATTERN entries need an occurrence count**, not just a description. "The installer
-  script has shipped with a defect twice" is a pattern; "the installer script had a bug"
-  is a one-off note and doesn't belong in this section.
-- **FIRST is singular.** One action, not a list of options. If there's real ambiguity
-  about what to do next, that ambiguity itself belongs in OPEN, and FIRST names the
-  smallest action that would resolve it.
-- **This document supersedes prose summaries for continuity purposes.** Where this skill
-  is available, prefer writing a handoff over a free-text "here's where we left off"
-  recap. The schema exists specifically because prose lets a decision and a suggestion
-  read identically a few sessions later.
-
-## Handoff to review
-
-Where a review or critique skill is available in the same environment, a session ending
-with unresolved SEV1/SEV2-equivalent issues in PATTERN or OPEN should note that a review
-pass is warranted, rather than silently deferring it. This skill does not perform the
-review itself; it only flags that one may be due.
+- DECIDED holds only what the user explicitly chose. A positive reaction without a
+  commitment is PROPOSED. Genuinely unclear origin goes to PROPOSED marked
+  origin-uncertain; fail toward under-claiming.
+- STATE lines carry line and byte counts so the next session can detect that a file
+  changed after the snapshot was written. Compute them; do not estimate. Pipe the path
+  through `wc -l` / `wc -c`, or use `tools/measure_savings.py --state-check` if the
+  toolkit is installed, rather than reading a stale count off memory.
+- supersedes names the prior handoff and voids it. Never append to an old snapshot.
+- session-length is long when the session ran past roughly 30 turns. On long, add one
+  line to UNVERIFIED stating the snapshot was authored under context degradation and may
+  have dropped early decisions.
+- PATTERN records process corrections that happened more than once, not content. Read
+  `${CLAUDE_PROJECT_DIR}/.claude/critique-log/*.jsonl` if present and add any defect
+  appearing in two or more runs. Where a retrospective journal exists, read it for the
+  same slug as a second recurrence source: it records friction and corrections a review
+  log never sees, and both already exist, so neither costs a new capture step. Absent
+  both, use the session alone.
+- FIRST must be executable without a clarifying question. If it is not, the snapshot
+  failed to transfer enough state; revise before finishing.
+- Prefer writing the snapshot before the session's final turns. Recall is worst exactly
+  where this protocol is usually invoked, so a snapshot written around two-thirds through
+  and updated at close beats one authored entirely at the end. Where a session-length
+  hook is installed (`tools/session_watch.py`), its first nudge is the cue.
+- On resumption, the next session restates STATE and OBJ in its own words before acting,
+  and asks about any line it cannot ground. A snapshot that reads coherently but transfers
+  nothing fails silently otherwise, and the restatement is what surfaces it on turn one
+  rather than three turns into the wrong work.
+- Then run a review/critique skill on the snapshot with its purpose set to OBJ, and if
+  that skill supports forcing a specific lens into its selection (see its own protocol
+  for how), request its archivist-equivalent lens explicitly rather than leaving lens
+  selection to defaults: a snapshot benefits more from "could a stranger reconstruct
+  this" scrutiny than from most other lenses. Apply SEV1 and SEV2, list SEV3 as backlog.
+  Do not restate review criteria here.
+- Close with at most 3 items the user has not raised, ranked, one line each with the
+  cost of acting on it.

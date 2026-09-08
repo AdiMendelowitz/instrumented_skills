@@ -1,42 +1,34 @@
-HANDOFF v2.0 | 2026-03-14 | supersedes: HANDOFF-2026-03-10 | session-length: medium
-OBJ: ship the CSV export feature on the reporting dashboard, then start on the async job queue for large exports
+HANDOFF v3.0 | 2026-03-14 | supersedes: none | session-length: short
+OBJ: ship the CSV export feature on the reporting dashboard, then start the async job queue for large exports
 
 STATE
-  src/reports/export.py | 210L | CSV export for datasets under 10k rows, no queue
-  src/reports/routes.py | added POST /api/reports/export, returns 200 with inline file
-  tests/test_export.py | 14 tests, all passing, covers empty dataset and header-escaping
-  docs/api.md | export endpoint documented, large-dataset behaviour not yet documented
+  src/reports/export.py | v3 | 210L 5340B | CSV export for datasets under 10k rows
+  src/reports/routes.py | v2 | 84L 2110B | POST /api/reports/export endpoint
+  pandas | 2.2.1 | installed in venv
+  export-worker | stopped | not yet built, queue work not started
 
 DECIDED
   exports over 10k rows return 413 for now rather than timing out silently
   CSV escaping follows RFC 4180, not Excel's looser dialect
   queue work is a separate feature, not bundled into this release
 
-CONSTRAINTS
-  no new background-worker infrastructure until the ops team approves a queue backend
-  export must stream, not buffer the full file in memory, once the row cap is lifted
-
 PROPOSED
-  Redis-backed queue for exports over the row cap, with a polling endpoint for status
+  Redis-backed queue for exports over the row cap, with a polling status endpoint
   moving the row cap from a hard 413 to a soft warning once streaming lands
 
 REJECTED
-  synchronous large exports with a longer timeout | ops flagged worker starvation risk
-  client-side CSV generation | dataset too large for a reasonable browser memory footprint
+  synchronous large exports with a longer timeout | worker starvation risk
+  client-side CSV generation | dataset too large for browser memory
 
 OPEN
-  which queue backend ops will approve | blocks: sizing the async work at all
-  does the frontend need a progress bar for large exports | blocks: scope of PROPOSED item 1
+  which queue backend ops will approve | blocks: sizing the async work
+  does the frontend need a progress bar | blocks: scope of PROPOSED item 1
 
 UNVERIFIED
-  assumption that all current export consumers can tolerate a 413 instead of a timeout,
-  never confirmed with the two known API consumers outside the dashboard itself
+  all export consumers can tolerate a 413 instead of a timeout | never confirmed with the two known API consumers outside the dashboard
 
 PATTERN
-  CSV escaping edge cases (embedded commas, quotes, newlines) found late in review twice
-  now | occurrences: 2
+  CSV escaping edge cases found late in review | occurrences: 2
 
 FIRST
-  Message the ops team to ask which queue backend (Redis, SQS, or an existing internal
-  option) is approved for this project, since that answer blocks sizing the async work
-  and nothing else in PROPOSED can move until it's known.
+  message the ops team to ask which queue backend is approved, since that blocks sizing the async work and nothing else in PROPOSED can move until it's known

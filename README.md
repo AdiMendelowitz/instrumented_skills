@@ -13,28 +13,26 @@ repeated work on the same target compound instead of restarting from zero every 
 |---|---|---|
 | [`critique/`](critique/) | Adversarial multi-lens review of a file, with memory: reads its own prior log before starting, so a second pass reconciles what changed instead of rediscovering it. | Ships complete |
 | [`token-aware/`](token-aware/) | LLM cost reduction for prompts and pipelines. Deterministic arithmetic in Python, rates dated and source-tagged, refuses to compute against stale numbers. | Ships complete, 36 tests pass |
-| [`retrospective/`](retrospective/) | Panel-style retros with anchored lenses, no finding without a quote, line, or named absence, and a cost lens that reports nothing rather than invents an ROI. | Core protocol complete |
-| [`handoff/`](handoff/) | A structured end-of-session snapshot, schema instead of prose, so a decision and a suggestion can't blur together a few sessions later. | Reconstructed, not verbatim (see note below) |
+| [`retrospective/`](retrospective/) | Panel-style retros with anchored lenses, no finding without a quote, line, or named absence, and a cost lens that reports nothing rather than invents an ROI. Capture can be manual or automatic via a Stop hook. | Ships complete, optional capture hook |
+| [`handoff/`](handoff/) | A structured end-of-session snapshot, schema instead of prose, so a decision and a suggestion can't blur together a few sessions later. Ships with a savings/lint toolkit and an optional session-length hook. | Ships complete, 55 tests pass |
 | [`kb-search/`](kb-search/) | Ranked BM25 search over what the other four write. Standard library only, no LLM call. | Ships complete, tests pass (run for current count) |
 
 A companion write-up on the reasoning behind these will be linked here once it's published.
 
 ## Status of this repo
 
-`critique` and `token-aware` ship complete: full protocols, references, and (for
-`token-aware`) a tested cost toolkit. Run the tests yourself before trusting the numbers,
-not instead of running them. `kb-search` ships a standard-library search toolkit with a
-passing test suite; run it for the current count, since a number in prose drifts as tests
-are added. `retrospective`'s core protocol and its panel/lens reference file are both
-complete. `handoff`'s protocol is a reconstruction built from a fully worked output
-example rather than a verbatim original. Read it once before relying on it, and see the
-note at the top of its `SKILL.md`.
-
-None of the five needs authoring from scratch. What every one of them still needs from
-you: `token-aware/tools/rates.json` has placeholder rates and an intentionally-expired
-date (see its `_comment` field), so fill in real, verified figures before using it for
-actual cost figures. Check the ⚠️ / note sections in each skill's README before relying
-on it for anything load-bearing.
+All five ship complete: full protocols and references, each with a real, tested toolkit
+behind it, not just a specification. `critique` and `kb-search` need nothing further.
+`token-aware` needs `tools/rates.json` filled in with current, verified rates before its
+numbers mean anything (it ships with placeholder rates and an intentionally-expired date,
+see its `_comment` field, so the loader refuses to compute rather than return a silent
+wrong number). `retrospective` and `handoff` each ship an optional hook
+(`retrospective/scripts/retro_capture.py`, a Stop hook for automatic journal capture;
+`handoff/tools/session_watch.py`, a UserPromptSubmit hook for session-length nudges) that
+needs registering in `settings.json` to run automatically; both skills work without it,
+using their manual modes. Run every test suite yourself before trusting the numbers, not
+instead of running them; a count in prose drifts the moment a test is added. Check the
+⚠️ / note sections in each skill's README before relying on it for anything load-bearing.
 
 ## Install
 

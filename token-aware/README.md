@@ -34,6 +34,12 @@ stale rates the first time pricing changes.
 - `references/prompt_rules.md`: construction rules for calls you write or review: no
   role-play preamble on extraction, `max_tokens` at the minimum plausible, `tool_use`
   over prompt-level JSON formatting where every provider in the path supports it.
+- `references/module_layout.md`: where REPLACE functions, prompt builders, and the LLM
+  client call site live in a codebase, plus the token-estimation constants and why the
+  budgeting estimate and the truncation estimate deliberately use different ones.
+- `references/python_replacements.md`: worked REPLACE patterns (threshold classification,
+  score-to-label mapping, trend direction, keyword routing, weighted aggregation) with
+  the accuracy-gate reasoning for the judgment-substitution cases.
 - `tools/cost.py`: subcommands `cost`, `breakeven`, `compare`, `estimate`, `verify`,
   `render`, `cpd`, with a `--log` flag on `cost` that appends to `cost_log.jsonl`. Pure
   functions, no network calls, refuses to compute anything against an expired rate table.
@@ -70,6 +76,8 @@ token-aware/
   references/pricing.md
   references/audit_workflow.md
   references/prompt_rules.md
+  references/module_layout.md
+  references/python_replacements.md
   tools/cost.py
   tools/test_cost.py
   tools/rates.json            <- fill in with current, verified rates
