@@ -13,7 +13,7 @@ Duties, in order:
 4. Enforce anchors at intake: a finding with no quote, line reference, or named absence is returned to the lens once, then dropped.
 5. Enforce ELMO (Enough, Let's Move On) per thread: end a thread once it stops producing new root causes.
 6. Run the debate: merge convergent findings under one root cause, force conflicting lenses to state the evidence that would settle the disagreement, and name blind spots no lens covered.
-7. Own the synthesis handed to the consolidated output document (`../SKILL.md` § Output). Debate output belongs to the panel; synthesis belongs to the facilitator.
+7. Own the synthesis handed to the consolidated output document (`../SKILL.md` R4 Synthesise, formatted per `formats.md`). Debate output belongs to the panel; synthesis belongs to the facilitator.
 
 ## Lenses
 

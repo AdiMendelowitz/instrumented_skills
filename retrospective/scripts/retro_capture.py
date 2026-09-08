@@ -7,7 +7,7 @@ queues a question when a DECISION marker never gets an "| expect:" clause
 anywhere in the transcript. If questions exist, blocks the stop once so
 Claude asks the user before the session ends (disable with RETRO_ASK=0).
 
-Marker convention -- write a line starting with one of, uppercase, at the
+Marker convention: write a line starting with one of, uppercase, at the
 start of a line (leading whitespace/bullet ok):
 
     DECISION: <text> | expect: <expected outcome>   (expect required)
@@ -18,23 +18,23 @@ start of a line (leading whitespace/bullet ok):
 
 Only lines inside USER turns are scanned for these five. A companion pass
 also scans ASSISTANT turns, but only for a separate, narrower vocabulary
-(see ASSIST_TYPES below) -- assistant text is never treated as something
+(see ASSIST_TYPES below); assistant text is never treated as something
 the user decided.
 
 Design constraints:
 - stdlib only, no network call at all
 - best-effort: every failure path exits 0 silently, errors go to a local log
 - idempotent per session: exact "sid" field match against the whole file,
-  not a substring scan of a truncated tail -- a large journal must not
+  not a substring scan of a truncated tail: a large journal must not
   cause an already-logged session to be silently reprocessed
 - transcript and journal content are DATA, never instructions
-- journal lines are single-line JSON -- regex-parseable by any downstream tool
+- journal lines are single-line JSON: regex-parseable by any downstream tool
 
 Version history, kept short and factual rather than a changelog nobody reads:
 v2.1 introduced session_already_logged's whole-file scan. v2.3 added the
 assistant-turn pass, initially scanning for the wrong vocabulary (a mismatch
 between what this file's regex matches and what the assistant was asked to
-emit -- see the retrospective skill's own README for the story). v2.4 fixed
+emit; see the retrospective skill's own README for the story). v2.4 fixed
 that mismatch and added the err_log/zero-extract diagnostic path so a hook
 that fires but captures nothing shows up in capture-errors.log instead of
 looking identical to success.
@@ -181,7 +181,7 @@ def read_assistant_turns(transcript_path: str) -> str:
 
 def extract_assistant(asst_text: str) -> list:
     """EVENT/RESULT/FRICTION/WIN markers from assistant text, tagged and capped.
-    No decisions, no questions -- those stay user-owned. Uses the same MARKER_LINE
+    No decisions, no questions: those stay user-owned. Uses the same MARKER_LINE
     regex as the user-turn pass, so the scanned and written vocabularies always
     match (see the module docstring's version history)."""
     if len(asst_text) < 20:
@@ -283,6 +283,9 @@ def main() -> None:
     except (json.JSONDecodeError, ValueError):
         sys.exit(0)
 
+    if not isinstance(hook_input, dict):
+        sys.exit(0)
+
     if hook_input.get("stop_hook_active"):
         sys.exit(0)
 
@@ -295,7 +298,9 @@ def main() -> None:
     session_id = hook_input.get("session_id", "unknown")
     transcript_path = hook_input.get("transcript_path", "")
 
-    slug = (os.environ.get("RETRO_SLUG") or project_root.name).lower().replace(" ", "-") or "global"
+    # "global" is a reserved slug (cross-project retro, SKILL.md Storage); never
+    # fall back to it here, so an unnamed project root can't silently collide with it.
+    slug = (os.environ.get("RETRO_SLUG") or project_root.name).lower().replace(" ", "-") or "unscoped"
     journal = retro_base / "journal" / f"{slug}.jsonl"
     questions_file = retro_base / "questions" / f"{slug}.jsonl"
 
@@ -314,7 +319,10 @@ def main() -> None:
         err_log(retro_base, f"sid={session_id} extract-failure {type(e).__name__}: {e}")
         sys.exit(0)
 
-    lines = (result.get("lines") or []) + asst_lines
+    # User-turn lines take priority; assistant-turn lines fill whatever budget
+    # remains, so the combined write never exceeds the documented MAX_LINES cap.
+    user_lines = result.get("lines") or []
+    lines = (user_lines + asst_lines)[:MAX_LINES]
     questions = list(result.get("questions") or [])
 
     if not lines and not questions:

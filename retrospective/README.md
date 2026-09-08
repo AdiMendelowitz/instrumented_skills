@@ -29,7 +29,7 @@ flowchart LR
     J --> Trigger{Retro requested,<br/>or LITE condition met}
     Trigger -->|task, up to 15 lines| T1[T1 mini-retro<br/>facilitator + 2 lenses]
     Trigger -->|week/sprint, 16-60 lines| T2[T2 medium retro<br/>facilitator + 4 lenses]
-    Trigger -->|close-out, 60+ lines| T3[T3 full panel<br/>facilitator + 8 lenses]
+    Trigger -->|close-out, 61+ lines| T3[T3 full panel<br/>facilitator + 8 lenses]
     Trigger -->|paired skill auto-fires| LITE[LITE<br/>up to 12 lines, no panel]
     T1 --> AJ[(actions.jsonl)]
     T2 --> AJ
@@ -74,7 +74,7 @@ other hooks; entries merge across settings levels rather than replacing):
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "python3", "args": ["/absolute/path/to/skills/retrospective/scripts/retro_capture.py"], "timeout": 30 }
+          { "type": "command", "args": ["python3", "/absolute/path/to/skills/retrospective/scripts/retro_capture.py"], "timeout": 30 }
         ]
       }
     ]
@@ -82,9 +82,10 @@ other hooks; entries merge across settings levels rather than replacing):
 }
 ```
 
-Use an absolute path and the exec form (`command` + `args`, not a shell string) for the
-same reason `handoff`'s hook does: a bare `~` doesn't expand under PowerShell, and exec
-form needs no quoting for paths with spaces.
+Use an absolute path and the `args` form (an argument array, not the `command` string
+form: the two are mutually exclusive, a hook setting both is rejected at config load)
+for the same reason `handoff`'s hook does: a bare `~` doesn't expand under PowerShell,
+and the array form needs no quoting for paths with spaces.
 
 **What it writes, and where:** one journal line per extracted marker, capped at 20 per
 session, to `<project>/.claude/retro-log/journal/<slug>.jsonl`, where `<project>`
@@ -96,8 +97,9 @@ scan, so a large journal never causes a session to be silently reprocessed.
 **When extraction finds nothing**, a `zero-extract` line goes to
 `retro-log/capture-errors.log` rather than the hook staying silent. That distinction
 matters: a hook that fires but writes nothing looks identical to a broken hook from the
-outside. In this skill's own development, that exact gap went undetected across three
-consecutive retrospectives on the skill itself before the diagnostic line was added.
+outside. In this skill's own development, that exact gap went undetected until the
+diagnostic path was added in v2.4 (see the version history in
+`scripts/retro_capture.py`'s module docstring).
 
 ## Storage
 
