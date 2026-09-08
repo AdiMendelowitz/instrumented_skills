@@ -21,7 +21,7 @@ compounds instead of restarting from zero.
   four write. The shared read-path that lets a run ask whether a root cause fired on any
   other target, not just the one in front of it. Standard library only, no LLM call.
 
-Full writeup of the reasoning behind these: **[link to blog post]**.
+A companion write-up on the reasoning behind these will be linked here once it's published.
 
 ## Status of this repo
 

@@ -3,7 +3,7 @@
 # folder to %USERPROFILE%\.claude\skills\<name>, archiving whatever it replaces first.
 #
 # Usage:
-#   .\install.ps1                                   # installs all four skills
+#   .\install.ps1                                   # installs all five skills
 #   .\install.ps1 -Skills critique,token-aware       # installs only the ones named
 #
 # If Windows blocks the script (downloaded from a zip), unblock it first:

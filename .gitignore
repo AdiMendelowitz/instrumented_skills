@@ -8,3 +8,9 @@ token-aware/tools/cost_log.jsonl
 
 # Critique logs, if a surface with a persistent filesystem writes them inside this repo
 .claude/critique-log/
+
+# Editor/IDE project files (can contain local machine paths)
+.idea/
+.vscode/
+*.iml
+

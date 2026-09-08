@@ -4,7 +4,7 @@
 # ~/.claude/skills/<name>, archiving whatever it replaces first.
 #
 # Usage:
-#   ./install.sh                              # installs all four skills
+#   ./install.sh                              # installs all five skills
 #   ./install.sh critique token-aware         # installs only the ones named
 
 set -euo pipefail
