@@ -28,7 +28,7 @@ PURPOSE: $1 if supplied, else from the target, else ask once in one line before 
 
 ## Contract
 
-Deliver an executive summary, then exactly 6 blocks, in order, no closing summary. The summary is 5 lines maximum: verdict, finding counts by SEV, the single top risk, the patched filename.
+Deliver an executive summary, then exactly 6 blocks, in order, no closing summary. The summary is 4 lines maximum: verdict, finding counts by SEV, the single top risk, the patched filename.
 1. instruction checklist
 2. tier, lens selection, prior-run reconciliation
 3. findings table
@@ -43,7 +43,7 @@ Deliver an executive summary, then exactly 6 blocks, in order, no closing summar
 
 ## P0 Checklist
 
-Before reading, enumerate every instruction in this file as atoms I1..In. The list goes to the log entry, not to the response. Build it from the copy in context; the file is not re-read between P0 and the P7 gate. After P2 loads bundles, append their rules as B1..Bn. Both sets are tested at P7.
+Before reading, enumerate every instruction in this file as atoms I1..In. The full list with its text goes to the log entry, not to the response; block 1 of the response shows only the atom count, since the detailed grading against that count is what block 6 reports. Build it from the copy in context; the file is not re-read between P0 and the P7 gate. After P2 loads bundles, append their rules as B1..Bn. Both sets are tested at P7.
 
 ## P1 Mode, tier, scope
 
@@ -66,7 +66,7 @@ One line per run, carrying target, date, protocol, promoted flag, and the IDs of
 
 Format gates, before any read: `.ipynb` never read raw, extract source cells only, since stored outputs can exceed the budget. Binary, minified, generated, and lockfile targets are declined in one line. Data files get their schema and loading code reviewed, not their rows.
 
-A code-graph tool (e.g. `graphify`, `ctags`, or an equivalent local indexer) is used only at T3 on code, only if installed, never on a markdown-only tree, since markdown nodes bill LLM calls while a local indexer runs for free.
+A code-graph tool (e.g. `ctags`, `cscope`, or an equivalent local indexer) is used only at T3 on code, only if installed, never on a markdown-only tree, since markdown nodes bill LLM calls while a local indexer runs for free.
 
 Read each file once, cache a summary, do not re-read.
 
@@ -87,9 +87,9 @@ Always on: purpose/product, evidence-integrity, falsification, pre-mortem, red-t
 | 2+ docs that reference each other | `bundles/multifile.md` |
 | money, estimates, or SLAs present | `bundles/systems.md`, finance section only |
 
-T1 reads at most one bundle. Cap active lenses at 10, dropping in this fixed order until at cap: cost, integration, terminology, archivist, bundle QA. The always-on five are never dropped. Name what was dropped. Add an unlisted lens only for a root cause none of the selected can reach, justified in 10 words.
+T1 reads at most one primary-signature bundle; the finance section loads in addition when triggered, since it is an independent, signature-agnostic trigger rather than a second primary match. Cap active lenses at 10, dropping in this fixed order until at cap: cost, integration, terminology, archivist, doc coherence, bundle QA. The always-on five are never dropped. Name what was dropped. Add an unlisted lens only for a root cause none of the selected can reach, justified in 10 words.
 
-At T3 run the two highest-stakes lenses as forked subagents so their findings cannot anchor on each other.
+At T3 run the two highest-stakes lenses as forked subagents so their findings cannot anchor on each other, where the surface supports forking; otherwise run them sequentially with no shared scratch state between them and note the fallback in block 2.
 
 **Reconciliation.** Read the prior entry's `promoted` flag before anything else. Where it is false, every prior finding is STILL-PRESENT with reason "unpromoted", the executive summary says so, and the run does not re-derive those findings from scratch. Otherwise: reuse the prior lens set unless PROTOCOL, tier, or signature changed, and say which changed. Every prior finding gets one of FIXED, STILL-PRESENT, or WITHDRAWN with a reason; "unpromoted" is a reason, not a fourth verdict. A prior finding that goes unmentioned is a protocol failure, not a silent pass. Findings logged under an older PROTOCOL are reconciled against the current rules, and a finding that only existed because of a rule since removed is WITHDRAWN citing the version.
 
@@ -127,6 +127,8 @@ Finding IDs are F1..Fn, assigned in ranked order and stable across runs on the s
 
 Append one line to the log, routed per P1: to the filesystem where it persists, creating the directory if absent, otherwise to the memory index named there.
 `{"v":"<protocol>","ts":"<iso8601>","t":"<path>","sz":[<lines>,<bytes>],"tier":"<t>","mode":"<normal|self>","lens":[...],"atoms":<n>,"pass":<n>,"f":[["<id>","SEV<n>","<lens>","<anchor slug, 6 words max>","<patched|backlog|withdrawn|still-present>"]],"cut":<n>,"promoted":false,"counters":{"calls":<n>,"cap":<n>,"bytes":<n>,"out_chars":<n>,"sev":{"1":<n>,"2":<n>,"3":<n>},"new":<n>,"carried":<n>},"out":"<patched filename or null>"}`
+
+In `f`, status `patched` covers both a finding whose fix is included in this run's patch and a prior finding reconciled as FIXED at P2; `backlog` is a deferred SEV3; `withdrawn` and `still-present` mirror their reconciliation verdicts of the same name.
 
 Promotion. Emit the platform-correct command that archives the canonical file, copies the patched file over it, and verifies the version string afterwards. A patched file is not a fix until a maintainer runs it. The log line carries `"promoted":false`. A later run on the same target reads that flag before reconciling, per P2.
 

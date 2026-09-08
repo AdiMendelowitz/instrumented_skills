@@ -10,7 +10,7 @@ Standing checks: what will be hardest to change in six months and whether that w
 **integration** (droppable at cap): behaviour at system boundaries.
 Standing checks: an external dependency with no stated failure mode, a retry or timeout policy left unstated, an assumption about ordering or consistency the design needs but never states.
 
-**bundle QA** (droppable at cap): internal consistency of the document set itself, when this bundle loads alongside others.
+**doc coherence** (droppable at cap): internal consistency of this document itself, distinct from `multifile.md`'s bundle QA lens, which checks consistency across a delivered set of files rather than within one.
 Standing checks: a diagram that disagrees with the prose describing it, a component named in one section and never again, a version or date on one part of the document that's stale relative to another.
 
 ## Finance section
