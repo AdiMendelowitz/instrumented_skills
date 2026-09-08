@@ -40,6 +40,9 @@ stale rates the first time pricing changes.
 - `references/python_replacements.md`: worked REPLACE patterns (threshold classification,
   score-to-label mapping, trend direction, keyword routing, weighted aggregation) with
   the accuracy-gate reasoning for the judgment-substitution cases.
+- `references/search_policy.md`: canonical layer order for retrieval (grep, then
+  kb-search, then a code-graph tool) with escalation checkpoints and the sources behind the
+  ordering. `SKILL.md` § Precedence points here rather than restating it.
 - `tools/cost.py`: subcommands `cost`, `breakeven`, `compare`, `estimate`, `verify`,
   `render`, `cpd`, with a `--log` flag on `cost` that appends to `cost_log.jsonl`. Pure
   functions, no network calls, refuses to compute anything against an expired rate table.
@@ -78,6 +81,7 @@ token-aware/
   references/prompt_rules.md
   references/module_layout.md
   references/python_replacements.md
+  references/search_policy.md
   tools/cost.py
   tools/test_cost.py
   tools/rates.json            <- fill in with current, verified rates

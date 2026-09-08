@@ -5,9 +5,9 @@ transfer directly to whatever domain you're auditing (a support pipeline, a moni
 system, a content pipeline, anything with numeric thresholds, keyword routing, or
 template filling currently going through a model call).
 
-Every judgment substitution here needs the agreement measurement in `SKILL.md` § the
-accuracy gate before it ships. The threshold and formatting cases are provably identical
-and need only unit tests.
+Every judgment substitution here needs the agreement measurement in `SKILL.md` § Decision
+order (the REPLACE step) before it ships. The threshold and formatting cases are provably
+identical and need only unit tests.
 
 Snippets assume:
 ```python

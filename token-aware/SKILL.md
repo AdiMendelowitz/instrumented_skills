@@ -36,7 +36,7 @@ this clause rather than restating it.
 
 ## Precedence
 
-For which retrieval tool to reach for (grep, then kb-search, then graphify), `references/search_policy.md` is canonical; follow its layer order rather than restating it here.
+For which retrieval tool to reach for (grep, then kb-search, then a code-graph tool), `references/search_policy.md` is canonical; follow its layer order rather than restating it here.
 
 A project's own configuration (a code-review gate, a CLAUDE.md, an equivalent policy
 file) outranks this skill's defaults for that project. This skill supplies the reasoning
@@ -97,8 +97,8 @@ that substitutes judgment). Full report shape is in `references/audit_workflow.m
 ## Reference files
 
 - `references/pricing.md`: rates, multipliers, caching mechanics, and correct caching
-  syntax, every fact tagged by source class (first-party, measured, or secondary) and
-  dated.
+  syntax, every fact tagged by source class (first-party, measured, secondary, or
+  unverified) and dated.
 - `references/audit_workflow.md`: the full procedure for auditing an existing codebase:
   discovery without brute-force reading, ranking by modelled cost, implementation in the
   decision order above, and an honest report format that states what the audit could and
@@ -107,6 +107,14 @@ that substitutes judgment). Full report shape is in `references/audit_workflow.m
   this skill: no role-play preamble on extraction, `max_tokens` at the minimum plausible,
   `tool_use` over prompt-level JSON formatting wherever every provider in the path
   supports it.
+- `references/module_layout.md`: where REPLACE functions, prompt builders, and the LLM
+  client call site live in a codebase, plus the token-estimation constants and why the
+  budgeting estimate and the truncation estimate deliberately use different ones.
+- `references/python_replacements.md`: worked REPLACE patterns (threshold classification,
+  score-to-label mapping, trend direction, keyword routing, weighted aggregation) with the
+  accuracy-gate reasoning for the judgment-substitution cases.
+- `references/search_policy.md`: canonical layer order for retrieval (grep, then
+  kb-search, then a code-graph tool) referenced from § Precedence above; not restated here.
 - `tools/cost.py`: the arithmetic. Subcommands: `cost`, `breakeven`, `compare`,
   `estimate`, `verify`, `render`, `cpd`; the `cost` subcommand takes a `--log` flag that
   appends the computed figure to `cost_log.jsonl`. No network calls; refuses to compute

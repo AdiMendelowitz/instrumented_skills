@@ -13,7 +13,7 @@ utils/
 
 ```python
 """
-Pure Python replacements for LLM calls identified during the token optimization audit.
+Pure Python replacements for LLM calls identified during the token optimisation audit.
 
 Every function documents:
   - which call it replaces (file + function name)
@@ -35,7 +35,7 @@ A character-based estimate is a budgeting aid, never a billing figure. Two thing
 
 Dividing character count by a chars-per-token constant produces a **smaller** number as the constant grows. To over-estimate, and therefore over-budget, the constant must be **below** the true average. English prose runs near 3.5 characters per token and code nearer 2.5, so a constant of 4 under-estimates prose by roughly 12% and code by far more. The previous version of this skill used 4 and described it as a conservative over-estimate, which was backwards.
 
-Claude 4.7 and later tokenize roughly 30% more densely than earlier models for the same text, so any constant calibrated on an older model under-reports on a newer one.
+Tokenizer density is not stable across model generations: a constant calibrated on one generation can under- or over-report on a newer one if the newer tokenizer packs a different number of characters per token. Verify the current ratio with `count_tokens` (§ Validate estimates against actuals) rather than carrying a fixed constant forward across a model change.
 
 ```python
 """utils/prompt_builders.py: centralized prompt construction."""
@@ -112,6 +112,6 @@ counted = client.messages.count_tokens(
 # and after any model-generation change.
 ```
 
-Run this before deploying an optimized prompt, and on the top five most expensive calls during any audit.
+Run this before deploying an optimised prompt, and on the top five most expensive calls during any audit.
 
 `count_tokens` needs an authenticated client, so it is available in Claude Code and in any environment where the project's own client is already configured. It is not available in a plain chat session, and an API key is never pasted into one. Where it cannot run, report the estimate as an estimate and note that it was not validated.

@@ -1,6 +1,6 @@
 # Pricing and caching mechanics | v1.3 | template, re-verify before use
 
-Canonical rates live in `tools/rates.json`. The table below is a generated snapshot; regenerate with `python tools/cost.py render`. Every fact carries a source class: `first-party` (Anthropic docs, cookbook, pricing page), `measured` (local probe), `secondary` (aggregator, used only where no first-party statement exists).
+Canonical rates live in `tools/rates.json`. The table below is a generated snapshot; regenerate with `python tools/cost.py render`. Every fact carries a source class: `first-party` (Anthropic docs, cookbook, pricing page), `measured` (local probe), `secondary` (aggregator, used only where no first-party statement exists), or `unverified` (the template's placeholder default before anyone has checked it).
 
 Read before quoting any cost figure, ratio, or saving.
 
