@@ -414,6 +414,32 @@ def test_dotfile_at_top_level_is_still_indexed(tmp_path):
     assert {c.source_file for c in I.collect_chunks(d)} == {".hidden-notes.md"}
 
 
+def test_symlinked_file_is_not_indexed(tmp_path):
+    """A symlink to a file outside the domain must not be read through.
+
+    Otherwise a corpus placed under sync or version control could carry a
+    symlink to an unrelated file (credentials, another user's notes) and
+    indexing would copy its content into the cache and into search results.
+    """
+    outside = tmp_path / "outside.md"
+    write(outside, "# Outside\nnot part of this corpus\n")
+    d = tmp_path / "domain"
+    write(d / "real.md", "# Real\ncontent\n")
+    (d / "link.md").symlink_to(outside)
+    chunks = I.collect_chunks(d)
+    assert {c.source_file for c in chunks} == {"real.md"}
+
+
+def test_source_hash_ignores_symlinked_files(tmp_path):
+    outside = tmp_path / "outside.md"
+    write(outside, "# Outside\nnot part of this corpus\n")
+    d = tmp_path / "domain"
+    write(d / "real.md", "# Real\ncontent\n")
+    before = I.source_hash(d)
+    (d / "link.md").symlink_to(outside)
+    assert I.source_hash(d) == before
+
+
 def test_source_hash_ignores_noise_directories(tmp_path):
     """Both walks must agree on corpus membership.
 

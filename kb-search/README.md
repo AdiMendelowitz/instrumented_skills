@@ -10,7 +10,7 @@ depends on nothing outside the standard library.
 | | |
 |---|---|
 | **Method** | BM25 ranking, JSON index cache (never pickle) |
-| **Tests** | 69 pass (49 core/index, 20 ranking/search) |
+| **Tests** | `python -m pytest -q` in `tools/`, all pass (count not stated here on purpose, see below) |
 | **Depends on** | `token-aware/references/search_policy.md` (hard dependency, see below) |
 | **Ships** | complete |
 

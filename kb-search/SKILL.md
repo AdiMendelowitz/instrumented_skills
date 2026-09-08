@@ -121,6 +121,13 @@ keyword-dense. A dot-*file* at the top level is still indexed, since that is con
 someone chose to write. The exclusion applies to both the chunk walk and the source-hash
 walk, so the two always agree on what the corpus contains.
 
+**Symlinks are never followed.** A symlinked directory is already left alone by the walk,
+but a symlink to a *file* passes an `is_file()` check and would otherwise be read through.
+A corpus that sits under sync or version control could carry a symlink pointing outside
+the domain directory; indexing it would copy that file's content into the JSON cache and
+into search results. Both the chunk walk and the source-hash walk skip any path that is a
+symlink, for the same reason they agree on `NOISE_DIRS`.
+
 **The cache lives beside the corpus, not inside it.** An index written into the corpus
 directory would be picked up by the next walk, change the source hash, and force a rebuild
 on every single run.
