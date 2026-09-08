@@ -57,7 +57,7 @@ foreach ($skill in $Skills) {
 
 Write-Host "`nDone. Read each skill's README.md for setup steps that can't be scripted"
 Write-Host "(filling in token-aware\tools\rates.json with current, verified rates, and"
-Write-Host "reviewing handoff's reconstructed SKILL.md before relying on it)."
+Write-Host "registering retrospective's and handoff's optional hooks if you want them)."
 
 if ($Skills -contains "token-aware") {
     Write-Host "`nRunning token-aware's test suite as a sanity check:"

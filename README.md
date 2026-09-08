@@ -106,9 +106,10 @@ or a trigger signal, not data. In words:
   admissible evidence sources when anchoring a cost-related finding.
 - `retrospective` also exposes a LITE invocation path: a review or handoff skill can
   trigger a reduced-scale retro when its own condition fires (a review that closes out a
-  project, a handoff that surfaces the same pattern a third time). `handoff`'s "Handoff to
-  review" section flags when a review pass is warranted, without performing one itself, so
-  a session ending with open SEV1/SEV2-equivalent issues does not silently defer them.
+  project, a handoff that surfaces the same pattern a third time). `handoff`'s own
+  protocol closes by running a review/critique skill against the snapshot itself, rather
+  than performing that review inline, so a session ending with open SEV1/SEV2-equivalent
+  issues does not silently defer them.
 
 Every connection is read-only and, apart from kb-search's policy dependency, optional:
 `critique` works standalone, and `token-aware` and `retrospective` fall back gracefully

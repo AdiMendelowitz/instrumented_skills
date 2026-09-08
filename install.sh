@@ -64,7 +64,7 @@ done
 echo ""
 echo "Done. Read each skill's README.md for setup steps that can't be scripted"
 echo "(filling in token-aware/tools/rates.json with current, verified rates, and"
-echo "reviewing handoff's reconstructed SKILL.md before relying on it)."
+echo "registering retrospective's and handoff's optional hooks if you want them)."
 
 if printf '%s\n' "${SKILLS[@]}" | grep -qx "token-aware"; then
     echo ""
