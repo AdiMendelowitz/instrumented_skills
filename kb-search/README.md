@@ -1,16 +1,26 @@
 # kb-search
 
+**grep answers when one term anchors the query. This answers when none does.**
+
 Ranked lexical search (BM25) over a corpus of markdown, text, or JSONL files. It is the
 read-path for the durable artifacts the other skills write: critique logs, retro journals,
 handoff snapshots, reference documents. It has no agent loop, makes no LLM call, and
 depends on nothing outside the standard library.
 
+| | |
+|---|---|
+| **Method** | BM25 ranking, JSON index cache (never pickle) |
+| **Tests** | 69 pass (49 core/index, 20 ranking/search) |
+| **Depends on** | `token-aware/references/search_policy.md` (hard dependency, see below) |
+| **Ships** | complete |
+
 The point is reconciliation across a whole archive rather than one file. `critique`
 already reconciles a target against its own last log entry; kb-search lets a run ask
 whether the same root cause has fired on any other target. A retro can check whether a
 long-horizon action from six weeks ago was ever carried out. A handoff can search prior
-snapshots for what a past session already settled. grep answers when a single term
-anchors the query; kb-search answers when none does.
+snapshots for what a past session already settled. See the top-level
+[README](../README.md#how-the-skills-connect) for the full data-flow diagram across all
+five skills.
 
 ## ⚠️ Hard dependency
 

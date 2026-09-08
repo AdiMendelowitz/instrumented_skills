@@ -1,5 +1,8 @@
 # critique
 
+**A review that remembers what it already found, so the second pass costs less than the
+first.**
+
 Adversarial multi-lens review of a single file: a document, a prompt, or a code file.
 The point that separates it from a one-off review is memory. Every run logs what it
 found, and the next run on the same target reads that log first, so an already-diagnosed
@@ -7,10 +10,34 @@ defect is reconciled (FIXED, STILL-PRESENT, or WITHDRAWN) instead of rediscovere
 re-billed from scratch. A patch is not a fix until it is promoted, and the log tracks
 that explicitly, so an unpromoted patch does not resurface as new findings next pass.
 
+| | |
+|---|---|
+| **Protocol** | v2.5, 8 stages (P0 to P7) |
+| **Lenses** | 5 always-on + bundle-specific (code, docs, systems, ml, multifile) |
+| **Depends on** | nothing (standalone) |
+| **Ships** | complete |
+
 `SKILL.md` is the protocol. `bundles/` holds the lens definitions loaded by target type
 (code, docs, systems, ml, multifile); each begins with `# Bundle:` and is trusted
 config, not review data. `evals/` holds the regression-harness guidance you use when you
 change the protocol or a bundle.
+
+## The pipeline
+
+```mermaid
+flowchart LR
+    P0[P0 Checklist] --> P1[P1 Mode, tier, scope]
+    P1 --> P2[P2 Select lenses,<br/>reconcile prior log]
+    P2 --> P3[P3 Adversarial pass]
+    P3 --> P4[P4 Rank findings]
+    P4 --> P5[P5 Patch + regression]
+    P5 --> P6[P6 Additions]
+    P6 --> P7[P7 Gate + log]
+    P7 -.->|next run reads this log| P2
+```
+
+The loop at the end is the whole point: P7 writes the log entry that P2 reads on the
+*next* run against the same target. Nothing here happens twice for free.
 
 ## Install
 

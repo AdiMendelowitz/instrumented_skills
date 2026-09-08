@@ -1,9 +1,34 @@
 # retrospective
 
+**Continuous capture during the work, a full anchored-panel review when it's over. No
+lens reports a finding it can't point to evidence for.**
+
 Structured retrospectives that compound instead of restarting from zero each time: a
 fixed panel of lenses, each required to anchor its findings in something real, plus a
 facilitator that sequences quieter perspectives before the dominant one so early findings
 don't anchor everything that follows.
+
+| | |
+|---|---|
+| **Modes** | LOG (continuous capture) and RUN (T1/T2/T3 panel tiers) |
+| **Lenses** | 8 standing, each capped at 3 anchored findings |
+| **Depends on** | nothing (finance lens works with or without a paired skill) |
+| **Ships** | core protocol + panel reference complete |
+
+## From a logged event to a panel finding
+
+```mermaid
+flowchart LR
+    L[LOG mode<br/>one line per event,<br/>timestamped, append-only] --> Trigger{Retro requested,<br/>or LITE condition met}
+    Trigger -->|single session, low stakes| T1[T1 mini-retro<br/>~12 lines, no panel]
+    Trigger -->|feature or sprint| T2[T2 medium retro<br/>a few anchored lenses]
+    Trigger -->|close-out or incident| T3[T3 full panel<br/>facilitator + 8 lenses]
+    Trigger -->|paired skill auto-fires| LITE[LITE<br/>T1-scale by default]
+```
+
+Pick a tier by stakes and scope, not by habit. A T3 panel on a routine weekly check-in is
+wasted structure; a T1 mini-retro on a project close-out under-serves the questions that
+actually need a debate.
 
 ## Note on this skill
 

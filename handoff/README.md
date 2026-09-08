@@ -1,9 +1,17 @@
 # handoff
 
+**A decision and a suggestion read identically in prose. They don't in a schema.**
+
 A structured end-of-session state snapshot, in place of a prose "here's where we left
 off" recap. The schema exists because prose doesn't force you to separate a decision you
 made from a suggestion you reacted well to. A few sessions later, those read the same,
 and a plan you never actually committed to starts getting treated as settled.
+
+| | |
+|---|---|
+| **Format** | 10-field schema, not prose |
+| **Depends on** | nothing (pairs optionally with a review/critique skill) |
+| **Ships** | `SKILL.md` is a reconstruction, see the note below |
 
 ## ⚠️ Note on this file
 
@@ -17,18 +25,32 @@ in use before writing your own real one.
 
 ## The schema
 
+| Field | Holds |
+|---|---|
+| `OBJ` | One sentence: what the next session is resuming toward (sits under the header) |
+| `STATE` | Verifiable facts about the artifacts: paths, versions, counts |
+| `DECIDED` | Things actually committed to (high bar: a liked suggestion isn't a decision) |
+| `CONSTRAINTS` | Hard limits the next session's work must respect |
+| `PROPOSED` | Suggestions on the table, not yet committed |
+| `REJECTED` | Options considered and dropped, with why |
+| `OPEN` | Questions blocking a specific next step, naming what they block |
+| `UNVERIFIED` | Claims carried forward that were never independently rechecked |
+| `PATTERN` | Recurring issues, with an occurrence count |
+| `FIRST` | The exact next action, singular, specific enough to execute directly |
+
+## Why this compounds across sessions
+
+```mermaid
+flowchart LR
+    S1[Session 1<br/>writes handoff] --> S2[Session 2<br/>reads OBJ, STATE, DECIDED,<br/>UNVERIFIED, PATTERN]
+    S2 --> W2[Session 2<br/>writes its own handoff]
+    W2 --> S3[Session 3 reads it, and so on]
 ```
-OBJ            one sentence: what the next session is resuming toward (sits under the header)
-STATE          verifiable facts about the artifacts: paths, versions, counts
-DECIDED        things actually committed to (high bar: a liked suggestion isn't a decision)
-CONSTRAINTS    hard limits the next session's work must respect
-PROPOSED       suggestions on the table, not yet committed
-REJECTED       options considered and dropped, with why
-OPEN           questions blocking a specific next step, naming what they block
-UNVERIFIED     claims carried forward that were never independently rechecked
-PATTERN        recurring issues, with an occurrence count
-FIRST          the exact next action, singular, specific enough to execute directly
-```
+
+Each session reads the last handoff before acting and writes its own before ending. A
+claim that was never rechecked stays visible in `UNVERIFIED` instead of quietly becoming
+fact; an issue that recurs shows up as a growing count in `PATTERN` instead of feeling
+new every time.
 
 ## Why this shape
 
@@ -51,10 +73,10 @@ is what makes that visible without you having to remember it yourself.
 
 ## Adapting this skill
 
-The nine sections are a strong default, not a fixed requirement. If your work doesn't
-produce REJECTED-worthy decisions often, for instance, you can leave that section
+The ten fields are a strong default, not a fixed requirement. If your work doesn't
+produce REJECTED-worthy decisions often, for instance, you can leave that field
 consistently `none` without removing it from the schema (consistency across handoffs
-matters more than trimming unused sections). If you pair this with a review or critique
+matters more than trimming unused fields). If you pair this with a review or critique
 skill, the "Handoff to review" section in `SKILL.md` is the connection point: it flags
 when a review pass is due without performing one itself, so the two skills stay
 decoupled.

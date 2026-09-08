@@ -1,8 +1,17 @@
 # token-aware
 
+**Cost arguments settled by running Python, not by asserting a number in prose.**
+
 Reduce LLM cost in prompts, pipelines, and code that calls an LLM, with the arithmetic
 done in Python rather than asserted in prose. The toolkit exists because a hand-written
 cache break-even claim once contradicted the multipliers printed right beside it.
+
+| | |
+|---|---|
+| **Toolkit** | `tools/cost.py`, 7 subcommands, standard library only |
+| **Tests** | 36 pass, run against fixture data, independent of `rates.json` |
+| **Depends on** | nothing to install; `rates.json` must be filled in before real use |
+| **Ships** | complete |
 
 ## ⚠️ Before you use this
 
@@ -21,14 +30,37 @@ stale rates the first time pricing changes.
   aggregator) so a stale or unverified figure is visible rather than silently trusted.
 - `references/audit_workflow.md`: the procedure for auditing an existing codebase's LLM
   calls: map without brute-force reading, rank by modelled cost, implement in decision
-  order (Batch, then deterministic replacement, then model downgrade, then caching, then
-  trimming), report honestly including what the audit couldn't see.
+  order (below), report honestly including what the audit couldn't see.
 - `references/prompt_rules.md`: construction rules for calls you write or review: no
   role-play preamble on extraction, `max_tokens` at the minimum plausible, `tool_use`
   over prompt-level JSON formatting where every provider in the path supports it.
 - `tools/cost.py`: subcommands `cost`, `breakeven`, `compare`, `estimate`, `verify`,
   `render`, `cpd`, with a `--log` flag on `cost` that appends to `cost_log.jsonl`. Pure
   functions, no network calls, refuses to compute anything against an expired rate table.
+
+## The decision order
+
+Evaluate every call site in this order and stop at the first category that applies.
+`audit_workflow.md` and `SKILL.md` § Decision order carry the full reasoning; this is the
+shape of it.
+
+```mermaid
+flowchart TD
+    Start[Every call site] --> Q1{Tolerant of<br/>async processing?}
+    Q1 -->|yes| BATCH[BATCH<br/>usually the biggest single lever]
+    Q1 -->|no| Q2{Actually deterministic,<br/>no judgment required?}
+    Q2 -->|yes| REPLACE[REPLACE with code]
+    Q2 -->|no| Q3{Cheaper model tier<br/>clears the quality bar?}
+    Q3 -->|yes| DOWNGRADE[DOWNGRADE]
+    Q3 -->|no| Q4{Stable prefix<br/>reused across calls?}
+    Q4 -->|yes| CACHE[CACHE]
+    Q4 -->|no| Q5{Input or output<br/>can shrink?}
+    Q5 -->|yes| TRIM[TRIM, last and incremental]
+    Q5 -->|no| KEEP[KEEP<br/>with a one-line justification]
+```
+
+`KEEP` is not a default. It is what is left after a call site survives the other five
+checks, and it still needs its one-line reason recorded.
 
 ## Install
 
