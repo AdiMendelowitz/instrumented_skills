@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handoff: A Schema Instead of a Recap · Adi Mendelowitz</title>
+<meta name="description" content="How to preserve decisions, state, and open questions when an AI session ends.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg:              #f8f6f1;
+    --bg-card:         #fdfcf8;
+    --bg-nav:          #f5f2ea;
+    --text:            #232019;
+    --muted:           #655f50;
+    --faint:           #e2dccd;
+    --faint-2:         #eae4d6;
+    --accent:          #33604d;
+    --accent-dim:      #e8efe6;
+    --accent-bdr:      #c9dacd;
+    --accent-contrast: #f6f9f6;
+    --text-dim:        #78715c;
+    --warn:            #96650c;
+    --warn-dim:        #f5ecd9;
+    --warn-bdr:        #e3cfa0;
+  }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg:              #171716;
+    --bg-card:         #1d1d1b;
+    --bg-nav:          #1a1a18;
+    --text:            #e9e6da;
+    --muted:           #a5a293;
+    --faint:           #2c2c29;
+    --faint-2:         #242422;
+    --accent:          #82b89c;
+    --accent-dim:      #1f2621;
+    --accent-bdr:      #33413a;
+    --accent-contrast: #122019;
+    --text-dim:        #8d8a7a;
+    --warn:            #d9a94f;
+    --warn-dim:        #2b2418;
+    --warn-bdr:        #4a3d24;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.2s ease, color 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    background: var(--accent); z-index: 200; transition: width 0.08s linear;
+  }
+
+  nav {
+    position: sticky; top: 3px; z-index: 100;
+    background: var(--bg-nav);
+    border-bottom: 0.5px solid var(--faint);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 52px;
+  }
+  nav .logo {
+    font-family: 'Newsreader', serif;
+    font-size: 1.0625rem; font-weight: 600;
+    color: var(--text); text-decoration: none; letter-spacing: 0.01em;
+  }
+  .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+  html[data-fontsize="lg"] { font-size: 112.5%; }
+  html[data-fontsize="sm"] { font-size: 87.5%; }
+  .nav-btn {
+    background: transparent; border: 0.5px solid var(--faint); border-radius: 50%;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); cursor: pointer; transition: border-color 0.15s, color 0.15s; padding: 0;
+  }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-btn.font-toggle { font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; }
+  #theme-toggle .icon-sun { display: none; }
+  html[data-theme="dark"] #theme-toggle .icon-sun { display: block; }
+  html[data-theme="dark"] #theme-toggle .icon-moon { display: none; }
+
+  .container { max-width: 660px; margin: 0 auto; padding: 0 2rem; }
+
+  .breadcrumb {
+    font-size: 0.75rem; font-family: 'IBM Plex Mono', monospace; color: var(--text-dim);
+    text-decoration: none; display: inline-block; margin: 28px 0 0; border-bottom: none;
+  }
+  .breadcrumb:hover { color: var(--accent); }
+
+  .meta-row {
+    display: flex; align-items: center; gap: 8px; margin: 18px 0 14px; flex-wrap: wrap;
+  }
+  .meta-badge {
+    font-size: 0.6875rem; font-weight: 500; color: var(--accent);
+    background: var(--accent-dim); border: 0.5px solid var(--accent-bdr);
+    border-radius: 3px; padding: 3px 8px; font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .hero { padding: 4px 0 36px; border-bottom: 0.5px solid var(--faint); }
+  .hero h1 {
+    font-family: 'Newsreader', serif;
+    font-size: clamp(1.75rem, 4.5vw, 2.375rem);
+    font-weight: 700; color: var(--text); line-height: 1.18; margin-bottom: 8px;
+  }
+  .hero-sub {
+    font-size: 1rem; color: var(--muted); line-height: 1.5; margin-bottom: 6px; max-width: 520px;
+  }
+  .hero-tagline { font-family: 'Newsreader', serif; font-style: italic; font-size: 0.9375rem; color: var(--text-dim); }
+
+  article { padding: 36px 0 56px; }
+
+  .callout {
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 18px 22px;
+    margin: 28px 0;
+  }
+  .callout-label {
+    font-size: 0.6875rem; font-weight: 500; letter-spacing: 1.5px;
+    color: var(--accent); text-transform: uppercase; font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 12px;
+  }
+  .callout p { margin-bottom: 12px; font-size: 0.9375rem; }
+  .callout p:last-of-type { margin-bottom: 0; }
+  .callout .bullets { margin-bottom: 0; }
+
+  .callout--warn { border-left-color: var(--warn); }
+  .callout--warn .callout-label { color: var(--warn); }
+
+  .skills-tech { list-style: none; margin: 14px 0 4px; }
+  .skills-tech li {
+    display: flex; gap: 10px; align-items: baseline; padding: 5px 0; font-size: 0.875rem; color: var(--muted);
+  }
+  .skills-tech .idx {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--text-dim);
+    flex-shrink: 0; width: 22px;
+  }
+  .skills-tech a { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.8125rem; font-weight: 500; border-bottom: none; }
+  .skills-tech a:hover { text-decoration: underline; }
+
+  .toc { margin: 0 0 8px; }
+
+  .callout-note {
+    font-size: 0.75rem; font-style: italic; color: var(--text-dim); margin-top: 12px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h2 {
+    font-family: 'Newsreader', serif; font-size: 1.3125rem; font-weight: 700;
+    color: var(--text); margin: 38px 0 14px; scroll-margin-top: 70px;
+  }
+  h2 code { font-size: 0.8em; }
+
+  h3 {
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.9375rem;
+    color: var(--text); margin: 22px 0 8px;
+  }
+
+  p { margin-bottom: 16px; color: var(--text); font-size: 0.9375rem; }
+
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-bdr); padding-bottom: 1px; transition: border-color 0.15s; }
+  a:hover { border-color: var(--accent); }
+
+  .bullets { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0 0 18px; }
+  .bullets li { font-size: 0.875rem; color: var(--muted); padding-left: 16px; position: relative; line-height: 1.6; }
+  .bullets li::before { content: '-'; position: absolute; left: 0; color: var(--accent); font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .bullets strong, .bullets b { color: var(--text); }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.875em;
+    background: var(--faint-2); padding: 1px 5px; border-radius: 3px; color: var(--text);
+  }
+  blockquote {
+    border-left: 2px solid var(--faint-2); padding: 2px 0 2px 18px; margin: 20px 0;
+    color: var(--muted); font-size: 0.9375rem; font-style: italic;
+  }
+  blockquote p { margin-bottom: 10px; }
+  blockquote p:last-child { margin-bottom: 0; }
+  pre {
+    background: var(--bg-card); border: 0.5px solid var(--faint-2); border-radius: 6px;
+    padding: 14px 18px; margin: 20px 0; overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.8125rem; line-height: 1.55; color: var(--text);
+  }
+  pre code { background: none; padding: 0; border-radius: 0; font-size: 1em; }
+
+  .table-wrap {
+    overflow-x: auto; margin: 20px 0; border: 0.5px solid var(--faint-2); border-radius: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  thead th {
+    background: var(--bg-nav); color: var(--muted); font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; text-align: left;
+    padding: 9px 12px; border-bottom: 0.5px solid var(--faint); white-space: nowrap;
+  }
+  td {
+    padding: 9px 12px; border-bottom: 0.5px solid var(--faint); color: var(--text);
+    vertical-align: top; font-size: 0.8125rem;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+  .status-pill {
+    display: inline-block; font-size: 0.625rem; font-weight: 500; color: var(--accent);
+    background: var(--accent-dim); border: 0.5px solid var(--accent-bdr); border-radius: 3px;
+    padding: 2px 6px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.02em;
+  }
+  .table-caption {
+    font-size: 0.75rem; font-style: italic; color: var(--text-dim); margin: -8px 0 20px;
+  }
+
+  .mermaid-wrap {
+    margin: 18px 0; border: 0.5px solid var(--faint-2); border-radius: 6px;
+    padding: 16px; background: var(--bg-card); overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; }
+  .mermaid svg { max-width: 100%; }
+
+  .lede { font-size: 0.9375rem; color: var(--muted); margin: 0 0 18px; }
+
+  details {
+    background: var(--bg-card); border: 0.5px solid var(--faint-2); border-radius: 6px;
+    padding: 14px 20px; margin: 10px 0 24px;
+  }
+  details summary {
+    cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 0.8125rem;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  details p { margin: 12px 0 0; font-size: 0.875rem; color: var(--muted); }
+  details .table-wrap { margin: 14px 0 6px; }
+  details h3:first-of-type { margin-top: 4px; }
+
+  .next-row {
+    display: flex; align-items: center; gap: 10px; margin: 14px 0 8px;
+    font-size: 0.9375rem;
+  }
+  .next-row .meta-badge { font-size: 0.6875rem; }
+  .next-row strong { color: var(--accent); font-family: 'Newsreader', serif; font-size: 1.0625rem; }
+
+  footer { padding: 24px 0; text-align: center; border-top: 0.5px solid var(--faint); margin-top: 20px; }
+  footer p { font-size: 0.75rem; font-family: 'IBM Plex Mono', monospace; color: var(--text-dim); }
+
+  @media (max-width: 600px) {
+    .container { padding: 0 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress-bar"></div>
+
+<nav>
+  <a href="https://www.adimendelowitz.dev/" class="logo">Adi Mendelowitz</a>
+  <div class="nav-right">
+    <button class="nav-btn font-toggle" id="font-toggle" type="button" aria-label="Adjust text size">Aa</button>
+    <button class="nav-btn" id="theme-toggle" type="button" aria-label="Switch between light and dark mode">
+      <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <a href="https://www.adimendelowitz.dev/" class="breadcrumb">&larr; adimendelowitz.dev</a>
+
+  <section class="hero">
+    <div class="meta-row">
+      <span class="meta-badge">POST 2 / 6</span>
+      <span class="meta-badge">SKILLS THAT REMEMBER</span>
+      <span class="meta-badge">8 MIN READ</span>
+    </div>
+    <h1>Handoff: A Schema Instead of a Recap</h1>
+    <p class="hero-sub">How to preserve decisions, state, and open questions when an AI session ends</p>
+  </section>
+
+  <article>
+
+    <p>You come back to a project after a few days away, reopen the long conversation, and scroll for the decision that mattered. The recap at the end says what got done. It doesn't say why one option was chosen over another, which parts are still uncertain, or what the very next step actually is. You end up re-reading half the thread to reconstruct context a well-written handoff should have carried for you.</p>
+
+    <p><code>handoff</code> is the skill I built to close that gap. It writes a state snapshot instead of a summary, and the difference shows up in the format before it shows up in the content. A session ending late, three decisions deep into a design problem, doesn't need a story about how the evening went. It needs what to do next, and what has already been settled so nobody re-derives it from scratch.</p>
+
+    <div class="callout">
+      <div class="callout-label">TL;DR</div>
+      <ul class="bullets">
+        <li>Capture the decision state, not only the conversation.</li>
+        <li>Separate facts, assumptions, completed work, open questions, and next actions.</li>
+        <li>Make the handoff useful to a future self, teammate, or AI session.</li>
+      </ul>
+    </div>
+
+    <h2 id="in-this-post" style="margin-top:0;">In this post</h2>
+    <ol class="skills-tech toc">
+      <li><span class="idx">01</span><span><a href="#recap-leaves-out">What a recap leaves out</a></span></li>
+      <li><span class="idx">02</span><span><a href="#handoff-is-interface">A handoff is an interface</a></span></li>
+      <li><span class="idx">03</span><span><a href="#anatomy">Anatomy of a useful handoff</a></span></li>
+      <li><span class="idx">04</span><span><a href="#worked-example">Worked example</a></span></li>
+      <li><span class="idx">05</span><span><a href="#design-decisions">Design decisions</a></span></li>
+      <li><span class="idx">06</span><span><a href="#limits">Limits</a></span></li>
+      <li><span class="idx">07</span><span><a href="#next">Next</a></span></li>
+    </ol>
+
+    <h2 id="recap-leaves-out">What a recap leaves out</h2>
+    <p>A narrative summary reads well and resumes badly. It tells a story about the session rather than giving the next reader something to check their own understanding against. Every snapshot <code>handoff</code> writes is labelled lines, not paragraphs: one fact per line, fields separated the same way every time, noun phrases instead of full sentences. A sentence appears only where a decision turned on the user's exact wording, and there it's quoted directly rather than paraphrased.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Typical recap</th><th>Structured handoff</th></tr></thead>
+        <tbody>
+          <tr><td>Narrative summary</td><td>Resume-ready state record</td></tr>
+          <tr><td>Blends facts and assumptions</td><td>Labels evidence and uncertainty</td></tr>
+          <tr><td>Lists activity</td><td>Captures decisions and rationale</td></tr>
+          <tr><td>Ends with vague next steps</td><td>Names owner, action, and blocker</td></tr>
+          <tr><td>Requires re-reading context</td><td>Enables targeted resumption</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mermaid-wrap">
+      <pre class="mermaid">
+flowchart LR
+    A[Work session] --&gt; B[Capture decisions and evidence]
+    B --&gt; C[Record current state and open questions]
+    C --&gt; D[Write explicit next actions]
+    D --&gt; E[Future session resumes from the handoff]
+      </pre>
+    </div>
+
+    <h2 id="handoff-is-interface">A handoff is an interface</h2>
+    <p>The closest analogy is a stable API, or a well-kept experiment log. Neither one tells you the story of how it came to be. Both tell you exactly what's available to call, what changed since the last version, and what you should never assume just because it happened to be true last time. A handoff aims for the same contract: it tells the next actor what is known, what changed, what has to happen next, and what shouldn't be assumed.</p>
+    <p>That framing is also what rules out a plain prose recap. A recap is optimised for being read once, by someone who was already in the room. A handoff is optimised for being consumed cold, by someone (or something) that wasn't. An API that changed its guarantees without documenting them would be useless no matter how well it worked internally; a handoff that quietly drops what changed since the last version fails the same way.</p>
+
+    <h2 id="anatomy">Anatomy of a useful handoff</h2>
+    <p>A snapshot that does this job covers seven things, and each one exists to hold a specific kind of fact so it never gets confused with another:</p>
+    <ul class="bullets">
+      <li>Objective and scope.</li>
+      <li>Decisions made and their rationale.</li>
+      <li>Current artifact or state.</li>
+      <li>Evidence and references.</li>
+      <li>Assumptions and uncertainty.</li>
+      <li>Open questions and blockers.</li>
+      <li>Next action, owner, and definition of done.</li>
+    </ul>
+    <p>State deserves a closer look, since it's the field most likely to have gone stale by the time anyone reads it. <code>handoff</code> records a line count and byte count alongside each path it names, so a resuming reader can tell in one glance whether the file has changed underneath the snapshot before acting on anything it says about that file.</p>
+    <p>Open questions get ranked by what they block, not by when they came up. A question raised in the first five minutes that now blocks nothing belongs below one raised in the last five minutes that blocks everything the next session needs to do.</p>
+    <p>The line doing the most work here separates decisions from assumptions. Recording that someone chose an option when they merely reacted well to it means the next session acts on a decision that was never actually made. The safer failure mode is under-claiming: anything with a genuinely unclear origin gets logged as an assumption or a proposal, flagged as such, rather than rounded up to a decision because that reads more confidently.</p>
+
+    <h2 id="worked-example">Worked example</h2>
+    <p>A typical end-of-session recap might read: "We discussed the blog series structure and made good progress. The five-post plan seems solid, though we may want to revisit post ordering later. Next step is to keep writing."</p>
+    <p>A structured handoff for the same session looks closer to this:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Decided</td><td>Adopt the six-post blueprint (supersedes the earlier five-post plan)</td></tr>
+          <tr><td class="mono">State</td><td><code>blog/critique.md</code>, 167 lines, reworked for the new post-1 spec</td></tr>
+          <tr><td class="mono">Open</td><td>Does post ordering still hold under the new structure? (blocks: post 3 onward)</td></tr>
+          <tr><td class="mono">Next</td><td>Rework <code>blog/handoff.md</code> to the post-2 spec; owner: this session; done when word count and structure checks pass</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The second version tells a resuming reader exactly what to trust, what's still unresolved, and what to do first. The first version tells a story that has to be re-interrogated before anyone can act on it. Notice, too, that the structured version is shorter. Compression is a side effect of the format, not the goal: once activity gets separated from decisions and decisions get separated from open questions, most of what a recap spends words narrating simply isn't needed anymore.</p>
+
+    <h2 id="design-decisions">Design decisions</h2>
+    <p>Facts and hypotheses stay in separate fields, on purpose. A protocol that lets a strong hunch drift into the decisions section, because it was stated with confidence, produces handoffs that look more settled than the session actually was.</p>
+    <p>An incomplete handoff says what's missing. If a claim was never checked, or a section had to be cut short, the snapshot states that plainly rather than presenting a tidy document that implies more coverage than it has. False continuity is worse than an acknowledged gap, because it fails silently on the next session's first move instead of on the handoff's own page.</p>
+    <p>A handoff creates a review trigger when meaningful work is still unresolved. Writing the snapshot isn't the end of the protocol; the last step is running a review against the snapshot itself, with the review's purpose set to the next session's objective, so an archivist-style check catches whether a stranger could actually reconstruct the state from the document alone. A handoff nobody checked is just a more organised way to be confidently wrong, and the review step exists specifically to catch that before it costs the next session anything.</p>
+
+    <blockquote>
+      <p><strong>Key rule</strong></p>
+      <p>Continuity means preserving state, decisions, and open questions in a checkable format, not writing a good story about what happened.</p>
+    </blockquote>
+
+    <h2 id="limits">Limits</h2>
+    <p>A handoff doesn't replace source control, project management, documentation, or a direct conversation with a teammate. It's a bridge across working sessions, built for one narrow job: get the next session (or the next person) acting correctly on the first move, without re-deriving context that already exists somewhere.</p>
+    <p>It also depends entirely on what went into it. If a line in the decisions section was wrong when it was written, the format doesn't catch that on its own. Only the review pass, or a careful reader doing their own restatement before acting, will.</p>
+    <p>Nor does a good format substitute for judgement on the reading end. A resuming session that pastes a snapshot in and starts acting without restating STATE and OBJ in its own words has skipped the one check that catches a snapshot that reads coherently but transferred nothing. The schema makes that check possible. It doesn't make it automatic.</p>
+
+    <h2 id="next">Next</h2>
+    <p>A handoff preserves the local state of a session. A retrospective asks what repeated patterns in that state are trying to teach us.</p>
+    <div class="next-row"><span class="meta-badge">NEXT</span> <strong>Retrospective</strong> - turning AI workflow history into learning.</div>
+
+    <details>
+      <summary>Technical detail: schema, hooks, and storage</summary>
+
+      <h3>The full schema</h3>
+<pre><code>HANDOFF v3.0 | &lt;date&gt; | supersedes: &lt;prior handoff id or none&gt; | session-length: &lt;short|long&gt;
+OBJ: &lt;next objective, one line&gt;
+STATE            &lt;=8 lines, paths first, then installs, then running processes
+DECIDED          &lt;=10 lines, user's explicit choices only, no reasoning
+PROPOSED         &lt;=6 lines, assistant recommendations not yet accepted
+REJECTED         &lt;=5 lines
+OPEN             &lt;=5 lines, ranked by what blocks OBJ
+UNVERIFIED       &lt;=5 lines
+PATTERN          &lt;=3 lines, corrections that recurred this session
+FIRST            1 line</code></pre>
+      <p>Every section carries a hard cap, and the caps are load-bearing rather than cosmetic. A snapshot that needs eleven DECIDED lines to be honest is describing a session that made too many unrelated decisions to hand off as one unit; the cap forces that to surface instead of getting absorbed into a longer document.</p>
+      <p><code>supersedes</code> names the prior handoff and voids it. Snapshots replace each other by name rather than accumulating, so there is exactly one live snapshot per thread of work at any time, and nobody has to read a chain of them to find current state.</p>
+
+      <h3>Where PATTERN comes from</h3>
+      <p>The protocol reads the project's critique log, when one exists, for any defect appearing in two or more runs, and reads the retrospective journal for the same slug as a second source, since it captures friction a critique log never records. Both already exist as a side effect of using the other skills in this set, so checking them costs a read, not a new capture step.</p>
+
+      <div class="mermaid-wrap">
+        <pre class="mermaid">
+graph TD
+    CL["critique log&lt;br/&gt;.claude/critique-log/*.jsonl"] --&gt;|"defect in 2+ runs"| PT["handoff's PATTERN section"]
+    RJ["retrospective journal&lt;br/&gt;.claude/retro-log/journal/*.jsonl"] --&gt;|"friction, same slug"| PT
+    PT --&gt; SS["This session's snapshot"]
+        </pre>
+      </div>
+
+      <h3>The session-length hook</h3>
+      <p>Where a session-length hook is installed, its nudge is the cue to write the snapshot partway through a long session, rather than reconstructing everything from memory at the end. The header's <code>session-length</code> field flips from <code>short</code> to <code>long</code> at roughly thirty turns, and that flip adds one line to UNVERIFIED stating the snapshot may have dropped early decisions under context degradation. Recall genuinely degrades over a long session, and a handoff assembled entirely from memory in the closing minutes is the exact failure mode the two-thirds-through timing exists to avoid.</p>
+
+      <h3>Storage and file access</h3>
+      <p><code>handoff</code> has no file-write access; the finished snapshot exists only as response text. That constraint means the user pastes it as the first message of the next session, or saves it themselves under a name they can cite later, and it's part of why the format stays dense enough to be worth pasting by hand.</p>
+
+      <h3>Closing the loop with critique</h3>
+      <p>The protocol's last step before FIRST is to run a review skill against the snapshot itself, purpose set to the next session's objective, requesting an archivist-style lens where the review skill supports choosing one. <code>critique</code>'s multifile bundle, covered in <a href="critique.html">the first post of this series</a>, is built for exactly this kind of check: two documents, the snapshot and the actual state of the project, that are supposed to agree.</p>
+    </details>
+
+  </article>
+
+</div>
+
+<footer>
+  <div class="container">
+    <p>adimendelowitz.dev · post 2/6</p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'neutral',
+    fontFamily: 'IBM Plex Mono, monospace',
+    flowchart: { curve: 'basis' }
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.getElementById('theme-toggle');
+    toggle.addEventListener('click', function () {
+      var root = document.documentElement;
+      var toDark = root.getAttribute('data-theme') !== 'dark';
+      if (toDark) { root.setAttribute('data-theme', 'dark'); } else { root.removeAttribute('data-theme'); }
+      try { localStorage.setItem('theme', toDark ? 'dark' : 'light'); } catch (e) {}
+    });
+    var fontToggle = document.getElementById('font-toggle');
+    var fontSteps = ['default', 'lg', 'sm'];
+    fontToggle.addEventListener('click', function () {
+      var root = document.documentElement;
+      var current = root.getAttribute('data-fontsize') || 'default';
+      var next = fontSteps[(fontSteps.indexOf(current) + 1) % fontSteps.length];
+      if (next === 'default') { root.removeAttribute('data-fontsize'); } else { root.setAttribute('data-fontsize', next); }
+      try { localStorage.setItem('fontsize', next); } catch (e) {}
+    });
+
+    var bar = document.getElementById('progress-bar');
+    function updateProgress() {
+      var scrollTop = window.scrollY || document.documentElement.scrollTop;
+      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      var pct = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0;
+      bar.style.width = pct + '%';
+    }
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress);
+    updateProgress();
+  });
+</script>
+</body>
+</html>
