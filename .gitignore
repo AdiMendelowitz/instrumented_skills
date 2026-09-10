@@ -6,11 +6,17 @@ token-aware/tools/cost_log.jsonl
 **/*.pyc
 .pytest_cache/
 
-# Critique logs, if a surface with a persistent filesystem writes them inside this repo
+# Critique logs, retro journal, and handoff snapshots, if a surface with a persistent
+# filesystem writes them inside this repo
 .claude/critique-log/
+.claude/retro-log/
+.claude/handoff/
 
 # Editor/IDE project files (can contain local machine paths)
 .idea/
 .vscode/
 *.iml
+
+# Blog drafts and review history: not part of the public portfolio
+blog/
 
