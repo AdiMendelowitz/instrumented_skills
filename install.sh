@@ -59,6 +59,10 @@ for s in "${SKILLS[@]}"; do
     fi
     cp -R "$from" "$to"
     echo "  installed $s"
+    if [ -f "$SOURCE_DIR/$s/references/destinations.md" ]; then
+        cp "$SOURCE_DIR/DESTINATIONS.md" "$to/references/destinations.md"
+        echo "  synced $s/references/destinations.md from DESTINATIONS.md"
+    fi
 done
 
 echo ""

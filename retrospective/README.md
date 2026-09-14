@@ -11,7 +11,7 @@ Stop hook that extracts marker lines from the transcript, no LLM call).
 
 | | |
 |---|---|
-| **Protocol** | v1.2 |
+| **Protocol** | v1.5 |
 | **Modes** | LOG, RUN (T1/T2/T3), ACTIONS, LITE |
 | **Capture** | manual, or automatic via `scripts/retro_capture.py` (regex, stdlib only) |
 | **Lenses** | 8 standing, each capped at 3 anchored findings |
@@ -107,7 +107,7 @@ diagnostic path was added in v2.4 (see the version history in
 <project>/.claude/retro-log/
   journal/<slug>.jsonl      append-only capture, manual or hook-written, never rewritten
   actions.jsonl             one line per action; a status update appends a new line, last wins
-  retros/<slug>-<date>.md   the retro documents themselves
+  retros/<slug>-<date>.md   optional byte-identical copies; the originals go to <notes-root>/retros/
   questions/<slug>.jsonl    gaps only the user can settle, drained one at a time
   capture-errors.log        hook diagnostics: true failures and zero-extract firings
 ```

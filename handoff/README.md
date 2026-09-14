@@ -9,9 +9,9 @@ committed to starts getting treated as settled.
 
 | | |
 |---|---|
-| **Protocol** | v3.0, 8 labeled sections, pipe-delimited fields, no prose |
+| **Protocol** | v3.3, 8 labeled sections, pipe-delimited fields, no prose |
 | **Toolkit** | `tools/measure_savings.py` (lint, state-check, compare); `tools/session_watch.py` (optional session-length hook) |
-| **Tests** | 55 pass |
+| **Tests** | pass; run `python -m pytest -q` for the current count |
 | **Depends on** | nothing (PATTERN sourcing and the closing review step pair optionally with `critique`/`retrospective`) |
 | **Ships** | complete |
 
@@ -23,7 +23,7 @@ committed to starts getting treated as settled.
 flowchart LR
     S[Session runs long] -->|session_watch.py<br/>optional hook| N[Turn-count nudge]
     N --> W[Write HANDOFF snapshot<br/>STATE, DECIDED, PROPOSED...]
-    W -->|paste as first message| R[Next session]
+    W -->|written to notes-root/handoffs/,<br/>read on turn one| R[Next session]
     R --> RS[Restate STATE + OBJ<br/>before acting]
     W -.->|purpose: OBJ| C[review/critique skill<br/>on the snapshot itself]
 ```

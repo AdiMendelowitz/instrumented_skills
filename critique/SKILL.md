@@ -2,7 +2,6 @@
 name: critique
 description: Adversarial multi-lens review of a document, prompt, or code file. Selects lenses by target type, scales budget by target size, patches findings into a versioned copy, emits the promotion command, logs findings, and verifies its own compliance. Use for review, audit, red-team, or adversarial-review requests on a file.
 argument-hint: [target-path] [purpose]
-disable-model-invocation: true
 allowed-tools: Read Write Grep Glob Bash(wc *) Bash(git diff *) Bash(jq *)
 ---
 
@@ -22,7 +21,7 @@ regardless of target type, and every finding needs an anchor: a quote, a line re
 or a named absence. A lens with nothing to anchor says so; manufacturing a finding to
 look thorough is treated as a failure mode, not diligence.
 
-PROTOCOL: critique v2.5
+PROTOCOL: critique v2.7
 TARGET: $0
 PURPOSE: $1 if supplied, else from the target, else ask once in one line before proceeding.
 
@@ -40,6 +39,17 @@ Deliver an executive summary, then exactly 6 blocks, in order, no closing summar
 - Never overwrite. Patched copy goes beside the target as `<name>.v<N+1>.<ext>`, disposable once the diff is reviewed.
 - Budget unit is one tool call. It governs P1 to P4. The patch write, the diff, and log I/O sit outside it.
 - Hitting budget is a valid stop; report what is unreviewed.
+
+## Destinations (DESTINATIONS v1; full text: `references/destinations.md`, identical across retrospective, critique, handoff, close-session)
+
+Common path: resolve the notes root from the project CLAUDE.md, write skill state under
+`.claude/` on a surface with real shell access to it, and place documents at
+`<notes-root>/{retros,handoffs,prompts}/`. On the Cowork device bridge, `.claude/` writes
+are refused and must never be attempted or proposed there, not even as a command handed to
+the user: stage skill-state lines at `<notes-root>/prepared/pending-<kind>-<date>.jsonl` and
+stop, per rule 2 in the reference file. Rules 4 to 6 (a folder connected via the device
+bridge, no folder connected, shell down) are edge cases: read the reference file before any
+of those three applies.
 
 ## P0 Checklist
 
@@ -125,7 +135,9 @@ Re-read this file from the top as an integrity check that the reviewed copy is c
 
 Finding IDs are F1..Fn, assigned in ranked order and stable across runs on the same target: a prior finding keeps its ID at reconciliation.
 
-Append one line to the log, routed per P1: to the filesystem where it persists, creating the directory if absent, otherwise to the memory index named there.
+Append one line to the log, routed per P1: to the filesystem where it persists, creating the directory if absent, otherwise to the memory index named there. If the filesystem append is refused (`.claude/` read-only through the bridge), stage the line per Destinations rule 2 and say so in the executive summary.
+
+Where a paired `retrospective` skill is installed and this run's log line shows any finding STILL-PRESENT across two or more runs (recurring), invoke `retrospective`'s LITE mode on this target now, slug derived the same way as the critique-log slug, and note the result in one line. Skip in one line, naming the reason, when no finding recurred or `retrospective` is not installed.
 `{"v":"<protocol>","ts":"<iso8601>","t":"<path>","sz":[<lines>,<bytes>],"tier":"<t>","mode":"<normal|self>","lens":[...],"atoms":<n>,"pass":<n>,"f":[["<id>","SEV<n>","<lens>","<anchor slug, 6 words max>","<patched|backlog|withdrawn|still-present>"]],"cut":<n>,"promoted":false,"counters":{"calls":<n>,"cap":<n>,"bytes":<n>,"out_chars":<n>,"sev":{"1":<n>,"2":<n>,"3":<n>},"new":<n>,"carried":<n>},"out":"<patched filename or null>"}`
 
 In `f`, status `patched` covers both a finding whose fix is included in this run's patch and a prior finding reconciled as FIXED at P2; `backlog` is a deferred SEV3; `withdrawn` and `still-present` mirror their reconciliation verdicts of the same name.

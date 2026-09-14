@@ -59,9 +59,11 @@ python tools/index.py --root <corpus-root> --domain <name> [--force]
 
 The corpus indexed is `<root>/<domain>`: `--root` names the directory that holds your
 corpora and `--domain` the subdirectory within it to search. Both are explicit; kb-search
-never guesses which project is active. Corpora are not all in one place (a retro journal is
-per-project under that project's own `.claude/`, a handoff archive would be global under
-`~/.claude/`), which is why the root is a required argument rather than a default.
+never guesses which project is active. Corpora are not all in one place: a retro journal is
+per-project under that project's own `.claude/`, and handoffs, retros and plans are
+per-project under that project's `<notes-root>/` (the project CLAUDE.md section "Where
+internal files live" names it), which is why the root is a required argument rather than
+a default.
 
 On Windows use the real interpreter path rather than a bare `python`, which can resolve to
 the Microsoft Store stub.

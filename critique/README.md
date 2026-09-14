@@ -12,7 +12,7 @@ that explicitly, so an unpromoted patch does not resurface as new findings next 
 
 | | |
 |---|---|
-| **Protocol** | v2.5, 8 stages (P0 to P7) |
+| **Protocol** | v2.6, 8 stages (P0 to P7) |
 | **Lenses** | 5 always-on + bundle-specific (code, docs, systems, ml, multifile) |
 | **Depends on** | nothing (standalone) |
 | **Ships** | complete |

@@ -53,6 +53,10 @@ foreach ($skill in $Skills) {
     }
     Copy-Item $from $to -Recurse -Force
     Write-Host "  installed $skill"
+    if (Test-Path (Join-Path $Source "$skill\references\destinations.md")) {
+        Copy-Item (Join-Path $Source "DESTINATIONS.md") (Join-Path $to "references\destinations.md") -Force
+        Write-Host "  synced $skill\references\destinations.md from DESTINATIONS.md"
+    }
 }
 
 Write-Host "`nDone. Read each skill's README.md for setup steps that can't be scripted"

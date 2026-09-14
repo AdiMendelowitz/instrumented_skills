@@ -2,20 +2,14 @@
 name: handoff
 description: Write a state snapshot at the end of a session so the next conversation resumes with full context instead of a transcript summary. Separates decisions from suggestions, records recurring corrections, carries unverified claims forward, and hands off to a review/critique skill for follow-up.
 argument-hint: [next-objective]
-disable-model-invocation: true
-allowed-tools: Read Glob Bash(wc *) Bash(python *) Bash(python3 *)
+allowed-tools: Read Write Glob Bash(wc *) Bash(python *) Bash(python3 *)
 ---
 
-PROTOCOL: handoff v3.0
+PROTOCOL: handoff v3.3
 OBJECTIVE: $ARGUMENTS
 
 Write a state snapshot for the next conversation. This is a resumption artifact, not a
 summary. Optimize for the next session acting correctly on turn one.
-
-This skill has no file-write access: the finished snapshot is this response's text, not
-a saved file. Paste it as the first message of the next session, or save it yourself
-under a name you can cite in `supersedes` later. The restatement rule under Rules is what
-fires once that pasted text lands in the next session's context.
 
 ## Format
 
@@ -28,7 +22,7 @@ this into a measured figure against your own real snapshots, and replace this se
 with the result once you have one.
 
 ```
-HANDOFF v3.0 | <date> | supersedes: <prior handoff id or none> | session-length: <short|long>
+HANDOFF v3.2 | <date> | supersedes: <prior handoff id or none> | session-length: <short|long>
 OBJ: <next objective, one line>
 STATE            <=8 lines, paths first, then installs, then running processes
   <path> | v<x> | <n>L <n>B | <purpose, 6 words max>
@@ -52,13 +46,18 @@ FIRST            1 line
 
 ## Rules
 
+- Write: the snapshot goes to `<notes-root>/handoffs/handoff-v<n+1>.md`, n being the
+  highest number already in that folder (list it; do not recall it), delivered per
+  Destinations below; `.claude/handoff/` is not a destination on any surface.
 - DECIDED holds only what the user explicitly chose. A positive reaction without a
   commitment is PROPOSED. Genuinely unclear origin goes to PROPOSED marked
   origin-uncertain; fail toward under-claiming.
 - STATE lines carry line and byte counts so the next session can detect that a file
   changed after the snapshot was written. Compute them; do not estimate. Pipe the path
   through `wc -l` / `wc -c`, or use `tools/measure_savings.py --state-check` if the
-  toolkit is installed, rather than reading a stale count off memory.
+  toolkit is installed, rather than reading a stale count off memory. Without a shell,
+  take line counts from Read's line numbers and byte sizes from the folder listing,
+  labelled estimated.
 - supersedes names the prior handoff and voids it. Never append to an old snapshot.
 - session-length is long when the session ran past roughly 30 turns. On long, add one
   line to UNVERIFIED stating the snapshot was authored under context degradation and may
@@ -81,9 +80,26 @@ FIRST            1 line
   rather than three turns into the wrong work.
 - Then run a review/critique skill on the snapshot with its purpose set to OBJ, and if
   that skill supports forcing a specific lens into its selection (see its own protocol
-  for how), request its archivist-equivalent lens explicitly rather than leaving lens
-  selection to defaults: a snapshot benefits more from "could a stranger reconstruct
-  this" scrutiny than from most other lenses. Apply SEV1 and SEV2, list SEV3 as backlog.
-  Do not restate review criteria here.
+  for how), request its archivist lens explicitly rather than leaving lens selection to
+  defaults: a snapshot benefits more from "could a stranger reconstruct this" scrutiny
+  than from most other lenses. Apply SEV1 and SEV2, list SEV3 as backlog. Do not restate
+  review criteria here.
+- Also invoke `retrospective`'s LITE mode on this snapshot when a paired `retrospective`
+  skill is installed and either PATTERN is non-empty or a `.claude/critique-log/` entry
+  for this target shows a finding recurring across two or more runs: these are the two
+  signals `retrospective`'s own trigger test names. Pass the slug this handoff resolved
+  to under Destinations rule 3. Skip in one line, naming which signal was absent, when
+  neither fires.
 - Close with at most 3 items the user has not raised, ranked, one line each with the
   cost of acting on it.
+
+## Destinations (DESTINATIONS v1; full text: `references/destinations.md`, identical across retrospective, critique, handoff, close-session)
+
+Common path: resolve the notes root from the project CLAUDE.md, write skill state under
+`.claude/` on a surface with real shell access to it, and place documents at
+`<notes-root>/{retros,handoffs,prompts}/`. On the Cowork device bridge, `.claude/` writes
+are refused and must never be attempted or proposed there, not even as a command handed to
+the user: stage skill-state lines at `<notes-root>/prepared/pending-<kind>-<date>.jsonl` and
+stop, per rule 2 in the reference file. Rules 4 to 6 (a folder connected via the device
+bridge, no folder connected, shell down) are edge cases: read the reference file before any
+of those three applies.
