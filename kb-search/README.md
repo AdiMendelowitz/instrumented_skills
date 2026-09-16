@@ -14,6 +14,14 @@ depends on nothing outside the standard library.
 | **Depends on** | `token-aware/references/search_policy.md` (hard dependency, see below) |
 | **Ships** | complete |
 
+## Contents
+
+- [Hard dependency](#hard-dependency)
+- [What it does](#what-it-does)
+- [Install](#install)
+- [Adapting this skill](#adapting-this-skill)
+- [Files](#files)
+
 The point is reconciliation across a whole archive rather than one file. `critique`
 already reconciles a target against its own last log entry; kb-search lets a run ask
 whether the same root cause has fired on any other target. A retro can check whether a
@@ -22,13 +30,14 @@ snapshots for what a past session already settled. See the top-level
 [README](../README.md#how-the-skills-connect) for the full data-flow diagram across all
 five skills.
 
-## ⚠️ Hard dependency
+## Hard dependency ⚠️
 
-kb-search defers one decision to `token-aware/references/search_policy.md`: when to reach
-for it at all. That file is the gating rule (grep first; escalate to kb-search only when
-grep is insufficient). Without it the skill gets reached for reflexively, which is the
-failure it is most exposed to. Install `token-aware` alongside kb-search; the repo-root
-installer warns if you do not.
+> [!WARNING]
+> kb-search defers one decision to `token-aware/references/search_policy.md`: when to
+> reach for it at all. That file is the gating rule (grep first; escalate to kb-search
+> only when grep is insufficient). Without it the skill gets reached for reflexively,
+> which is the failure it is most exposed to. Install `token-aware` alongside kb-search;
+> the repo-root installer warns if you do not.
 
 ## What it does
 

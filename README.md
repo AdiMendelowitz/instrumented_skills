@@ -89,7 +89,7 @@ logs); `kb-search` is the shared read-path over all of them, and `token-aware` o
 policy that says when to use it.
 
 Solid arrows are artifacts written and later read. Dashed arrows are a policy dependency
-or a trigger signal, not data.
+or a trigger signal, not data. Blue is the shared read-path; orange is what writes to it.
 
 ```mermaid
 flowchart LR
@@ -105,6 +105,11 @@ flowchart LR
     handoff -.->|flags review due| critique
     critique -.->|may trigger LITE| retrospective
     handoff -.->|may trigger LITE| retrospective
+
+    classDef writer fill:#E69F00,stroke:#8a5f00,stroke-width:2px,color:#000
+    classDef hub fill:#56B4E9,stroke:#1b6d99,stroke-width:2px,color:#000
+    class critique,retrospective,handoff,token writer
+    class kb hub
 ```
 
 <details>

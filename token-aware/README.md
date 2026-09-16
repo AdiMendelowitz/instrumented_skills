@@ -13,15 +13,25 @@ cache break-even claim once contradicted the multipliers printed right beside it
 | **Depends on** | nothing to install; `rates.json` must be filled in before real use |
 | **Ships** | complete |
 
-## ⚠️ Before you use this
+## Contents
 
-**`tools/rates.json` ships as a template with placeholder rates and an intentionally
-expired date.** Every model rate needs to come from Anthropic's current pricing page
-before this is useful for real numbers. The loader refuses to compute anything until
-`expires` is a real, future date, and the shipped template is deliberately already past
-its (fake) expiry so that refusal is the first thing you see rather than a silent wrong
-number. This is intentional: a skill that ships hardcoded rates is a skill that ships
-stale rates the first time pricing changes.
+- [Before you use this](#before-you-use-this)
+- [What it does, once set up](#what-it-does-once-set-up)
+- [The decision order](#the-decision-order)
+- [Install](#install)
+- [Adapting this skill](#adapting-this-skill)
+- [The counters-proxy connection](#the-counters-proxy-connection)
+
+## Before you use this ⚠️
+
+> [!WARNING]
+> **`tools/rates.json` ships as a template with placeholder rates and an intentionally
+> expired date.** Every model rate needs to come from Anthropic's current pricing page
+> before this is useful for real numbers. The loader refuses to compute anything until
+> `expires` is a real, future date, and the shipped template is deliberately already past
+> its (fake) expiry so that refusal is the first thing you see rather than a silent wrong
+> number. This is intentional: a skill that ships hardcoded rates is a skill that ships
+> stale rates the first time pricing changes.
 
 ## What it does, once set up
 
@@ -51,7 +61,7 @@ stale rates the first time pricing changes.
 
 Evaluate every call site in this order and stop at the first category that applies.
 `audit_workflow.md` and `SKILL.md` § Decision order carry the full reasoning; this is the
-shape of it.
+shape of it. Green endings are a clear win; the amber ending still owes a justification.
 
 ```mermaid
 flowchart TD
@@ -66,6 +76,11 @@ flowchart TD
     Q4 -->|no| Q5{Input or output<br/>can shrink?}
     Q5 -->|yes| TRIM[TRIM, last and incremental]
     Q5 -->|no| KEEP[KEEP<br/>with a one-line justification]
+
+    classDef win fill:#009E73,stroke:#00563e,stroke-width:2px,color:#fff
+    classDef caveat fill:#E69F00,stroke:#8a5f00,stroke-width:2px,color:#000
+    class BATCH,REPLACE,DOWNGRADE,CACHE,TRIM win
+    class KEEP caveat
 ```
 
 `KEEP` is not a default. It is what is left after a call site survives the other five

@@ -15,9 +15,21 @@ committed to starts getting treated as settled.
 | **Depends on** | nothing (PATTERN sourcing and the closing review step pair optionally with `critique`/`retrospective`) |
 | **Ships** | complete |
 
+## Contents
+
+- [From a long session to the next one acting correctly on turn one](#from-a-long-session-to-the-next-one-acting-correctly-on-turn-one)
+- [The schema](#the-schema)
+- [Why this shape](#why-this-shape)
+- [Tools: measure_savings.py](#tools-measure_savingspy)
+- [Tools: session_watch.py](#tools-session_watchpy)
+- [Insights from prior use](#insights-from-prior-use)
+- [Files](#files)
+
 `example-handoff.md` is a sanitized worked example that passes the linter below.
 
 ## From a long session to the next one acting correctly on turn one
+
+The two highlighted nodes are where each loop actually closes.
 
 ```mermaid
 flowchart LR
@@ -26,6 +38,9 @@ flowchart LR
     W -->|written to notes-root/handoffs/,<br/>read on turn one| R[Next session]
     R --> RS[Restate STATE + OBJ<br/>before acting]
     W -.->|purpose: OBJ| C[review/critique skill<br/>on the snapshot itself]
+
+    classDef closes fill:#009E73,stroke:#00563e,stroke-width:2px,color:#fff
+    class RS,C closes
 ```
 
 Two loops close here: the next session verifies it actually absorbed the state before
@@ -144,10 +159,11 @@ Swap in a real transcript path: Claude Code writes them under
 above produces the same silent, exit-0 output as a broken install, which is exactly the
 ambiguity the next paragraph describes.
 
-The hook fails open on every error path (malformed input, missing transcript,
-unwritable state directory), because a hook that raises could interfere with prompt
-submission. That safety property is also what makes silent failure possible, which is
-why `CLAUDE_md-snippet.md` ships a verification command and says when to re-run it.
+> [!NOTE]
+> The hook fails open on every error path (malformed input, missing transcript,
+> unwritable state directory), because a hook that raises could interfere with prompt
+> submission. That safety property is also what makes silent failure possible, which is
+> why `CLAUDE_md-snippet.md` ships a verification command and says when to re-run it.
 
 ## Insights from prior use
 

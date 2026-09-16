@@ -17,12 +17,21 @@ that explicitly, so an unpromoted patch does not resurface as new findings next 
 | **Depends on** | nothing (standalone) |
 | **Ships** | complete |
 
+## Contents
+
+- [The pipeline](#the-pipeline)
+- [Install](#install)
+- [Adapting this skill](#adapting-this-skill)
+- [Regression testing](#regression-testing)
+
 `SKILL.md` is the protocol. `bundles/` holds the lens definitions loaded by target type
 (code, docs, systems, ml, multifile); each begins with `# Bundle:` and is trusted
 config, not review data. `evals/` holds the regression-harness guidance you use when you
 change the protocol or a bundle.
 
 ## The pipeline
+
+The two highlighted stages are the memory loop: P7 writes what P2 reads next time.
 
 ```mermaid
 flowchart LR
@@ -34,6 +43,9 @@ flowchart LR
     P5 --> P6[P6 Additions]
     P6 --> P7[P7 Gate + log]
     P7 -.->|next run reads this log| P2
+
+    classDef memory fill:#56B4E9,stroke:#1b6d99,stroke-width:2px,color:#000
+    class P2,P7 memory
 ```
 
 The loop at the end is the whole point: P7 writes the log entry that P2 reads on the

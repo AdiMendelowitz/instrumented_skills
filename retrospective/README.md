@@ -18,7 +18,22 @@ Stop hook that extracts marker lines from the transcript, no LLM call).
 | **Depends on** | nothing (LITE and the finance lens pair optionally with `critique`/`handoff`) |
 | **Ships** | complete: protocol, panel reference, capture hook, all with real production use behind them |
 
+## Contents
+
+- [From a marker line to a panel finding](#from-a-marker-line-to-a-panel-finding)
+- [Marker vocabulary](#marker-vocabulary)
+- [Automatic capture: scripts/retro_capture.py](#automatic-capture-scriptsretro_capturepy)
+- [Storage](#storage)
+- [Ground rules (binding at every RUN tier)](#ground-rules-binding-at-every-run-tier)
+- [ACTIONS mode](#actions-mode)
+- [LITE mode](#lite-mode)
+- [Adapting this skill](#adapting-this-skill)
+- [Files](#files)
+
 ## From a marker line to a panel finding
+
+Colour tracks scale: T1 to T3 get lighter-to-darker as the panel grows, LITE (green) is
+a different path entirely, triggered by a paired skill rather than chosen by size.
 
 ```mermaid
 flowchart LR
@@ -35,6 +50,15 @@ flowchart LR
     T2 --> AJ
     T3 --> AJ
     AJ -.->|ACTIONS mode| Q[list / --overdue]
+
+    classDef t1 fill:#56B4E9,stroke:#1b6d99,stroke-width:2px,color:#000
+    classDef t2 fill:#E69F00,stroke:#8a5f00,stroke-width:2px,color:#000
+    classDef t3 fill:#D55E00,stroke:#7a3500,stroke-width:2px,color:#fff
+    classDef lite fill:#009E73,stroke:#00563e,stroke-width:2px,color:#fff
+    class T1 t1
+    class T2 t2
+    class T3 t3
+    class LITE lite
 ```
 
 Pick a tier by stakes and scope, not by habit. A T3 panel on a routine weekly check-in is
