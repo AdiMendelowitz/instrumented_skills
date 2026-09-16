@@ -20,12 +20,23 @@ repeated work on the same target compound instead of restarting from zero every 
 
 A companion write-up on the reasoning behind these will be linked here once it's published.
 
+## Why
+
+State that only lives inside a conversation gets lost the moment the conversation ends:
+a decision reached last Tuesday reads exactly like a suggestion that sounded good at the
+time, once enough sessions have passed. Each of these six skills addresses one place
+that loss happens, a review, a retro, a handoff, a cost argument, a search, an
+end-of-session close, and shares the same fix: write the state down somewhere the next
+session can read it back, and never let the two categories blur into each other.
+
 ## Contents
 
+- [Why](#why)
 - [Status of this repo](#status-of-this-repo)
 - [Install](#install)
 - [How the skills connect](#how-the-skills-connect)
 - [Customising for your own setup](#customising-for-your-own-setup)
+- [Support](#support)
 - [License](#license)
 
 ## Status of this repo
@@ -154,6 +165,11 @@ genuinely environment-specific: where logs live on your surface, how to add a le
 persona, how to fill in current rates. The mechanism (log, reconcile, don't re-derive) is
 meant to transfer directly; the specifics (paths, project names, current pricing) are
 not, and are flagged everywhere they appear.
+
+## Support
+
+Open a GitHub issue on this repository for bugs or questions; there's no other support
+channel right now.
 
 ## License
 
