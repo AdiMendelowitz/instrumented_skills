@@ -5,9 +5,11 @@ argument-hint: "[mode: log|run|actions|lite] [slug] [args]"
 allowed-tools: Read Write Glob Grep Task Bash(wc *) Bash(jq *) Bash(date *) Bash(git log *) Bash(git diff *)
 ---
 
-PROTOCOL: retrospective v1.5
+PROTOCOL: retrospective v1.7
 MODE: $0 (log | run | actions | lite). Absent mode: infer run for retro requests, log for "note this down" requests, ask in one line only if genuinely ambiguous.
 SLUG: $1, the scope identifier. Project slugs match the project directory name; task slugs are `<project>-<task>`. A `global` retro is cross-project: it reads the retro DOCUMENTS (not journals) of the project roots named at invocation and writes its own document into the invoking project's `<notes-root>/retros/`.
+
+**Known limitation, documented rather than silently assumed away:** as written, R1 and the rest of RUN mode read from a single project root; nothing in this file loops over multiple named roots for a `global` retro, despite the SLUG line above describing cross-project reading. Treat `global` as reading one root at a time until R1 is rewritten to actually iterate the named list; do not assume prior `global` retro documents aggregated more than the invoking project's own root.
 
 ## Storage
 
@@ -16,7 +18,7 @@ All state lives under `<root>/.claude/retro-log/`, created on first write, where
 - `journal/<slug>.jsonl`: append-only capture of events as they happen. Never edited, never rewritten.
 - `actions.jsonl`: one line per action item across all retros. Status updates append a superseding line with the same id; the last line per id wins.
 - `retros/<slug>-<yyyymmdd>.md`: optional byte-identical copies of retro documents; the originals are in `<notes-root>/retros/`.
-- `questions/<slug>.jsonl`: user-only gaps queued by the capture hook. Status updates append a superseding line with the same qid; the last line per qid wins.
+- `questions/<slug>.jsonl`: user-only gaps queued by the capture hook, or by the assistant directly when a tangential item surfaces mid-task that is not the current thread: same schema, appended as `status:"open"`, so a parked item and a hook-found gap are drained the same way at R1 rather than either being silently dropped. Status updates append a superseding line with the same qid; the last line per qid wins.
 
 Question line schema:
 `{"qid":"Q<hash8>","ts":"<iso8601>","sid":"<session>","q":"<one direct question>","status":"open|answered|dropped"}`
@@ -94,7 +96,7 @@ Budget governs phases R1 to R4. Document write, action-file writes, and journal 
 
 **R0 Reconcile.** Read `actions.jsonl`. Every action from prior retros on this slug (and `global`) that is not `done` or `dropped` gets a verdict line in the document: DONE, CARRIED (with reason), or DROPPED (with reason). An unmentioned prior action is a protocol failure. Zero follow-through across 2 consecutive retros triggers a mandatory finding against the action-setting process itself.
 
-**R1 Facts.** Build the timeline from the journal (period scope per Tiering), git log where relevant, handoff snapshots (`<notes-root>/handoffs/`, per Destinations), and critique logs (`.claude/critique-log/*.jsonl`). Read `retro-log/capture-errors.log`: 3 or more `api-failure` entries since the last retro is a mandatory `friction` finding, since it means automatic capture has been silently dead. Facts are agreed before interpretation begins; where the record is silent, say so rather than reconstruct.
+**R1 Facts.** Build the timeline from the journal (period scope per Tiering), git log where relevant, handoff snapshots (`<notes-root>/handoffs/`, per Destinations), and critique logs (`.claude/critique-log/*.jsonl`). Read `retro-log/capture-errors.log`: 3 or more `api-failure` entries since the last retro is a mandatory `friction` finding, since it means automatic capture has been silently dead. Facts are agreed before interpretation begins; where the record is silent, say so rather than reconstruct. On a surface with no Stop hook (Cowork, claude.ai), an empty journal is the expected default for this phase, not an exception to apologise for: state plainly that the timeline is built from the session's own tool-call record instead, per the rule above. Treat that gap itself as a `friction` finding only when natural decision points existed and no manual `LOG`-mode line was written to capture any of them, since the remedy for that failure is the habit, not this phase's tolerance for a silent record.
 
 **R2 Decision review.** Table every `decision` entry: decision | information available then | expected | actual | verdict (good-call, bad-call, good-call-bad-luck, bad-call-good-luck, unresolved). Compute the calibration rate: fraction of resolved decisions where actual matched expected. Report it even when the sample is small, labelled as such.
 

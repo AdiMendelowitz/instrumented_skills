@@ -3,7 +3,7 @@
 # folder to %USERPROFILE%\.claude\skills\<name>, archiving whatever it replaces first.
 #
 # Usage:
-#   .\install.ps1                                   # installs all five skills
+#   .\install.ps1                                   # installs all six skills
 #   .\install.ps1 -Skills critique,token-aware       # installs only the ones named
 #
 # If Windows blocks the script (downloaded from a zip), unblock it first:
@@ -11,7 +11,7 @@
 #   powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 param(
-    [string[]]$Skills = @("critique", "token-aware", "retrospective", "handoff", "kb-search"),
+    [string[]]$Skills = @("critique", "token-aware", "retrospective", "handoff", "kb-search", "close-session"),
     [string]$Source = $PSScriptRoot,
     [string]$Destination = "$env:USERPROFILE\.claude\skills"
 )
@@ -32,6 +32,18 @@ Write-Host "  all requested skill folders present: $($Skills -join ', ')"
 if (($Skills -contains "kb-search") -and -not ($Skills -contains "token-aware")) {
     Write-Host "  NOTE: installing kb-search without token-aware. Its search policy" -ForegroundColor Yellow
     Write-Host "        (token-aware\references\search_policy.md) is a hard dependency; install token-aware too."
+}
+
+# close-session composes retrospective/critique/handoff; it degrades gracefully without
+# them (runs each missing phase's shape inline, per its own SKILL.md), so this is informational.
+if ($Skills -contains "close-session") {
+    foreach ($companion in @("retrospective", "critique", "handoff")) {
+        if (-not ($Skills -contains $companion)) {
+            Write-Host "  NOTE: installing close-session without $companion. It still works," -ForegroundColor Yellow
+            Write-Host "        running that phase inline at reduced quality; install $companion too"
+            Write-Host "        for the full protocol."
+        }
+    }
 }
 
 New-Item -ItemType Directory -Force -Path $Destination | Out-Null

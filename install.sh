@@ -4,7 +4,7 @@
 # ~/.claude/skills/<name>, archiving whatever it replaces first.
 #
 # Usage:
-#   ./install.sh                              # installs all five skills
+#   ./install.sh                              # installs all six skills
 #   ./install.sh critique token-aware         # installs only the ones named
 
 set -euo pipefail
@@ -16,7 +16,7 @@ STAMP="$(date +%Y%m%d-%H%M)"
 if [ "$#" -gt 0 ]; then
     SKILLS=("$@")
 else
-    SKILLS=(critique token-aware retrospective handoff kb-search)
+    SKILLS=(critique token-aware retrospective handoff kb-search close-session)
 fi
 
 echo "Preflight:"
@@ -38,6 +38,18 @@ if printf '%s\n' "${SKILLS[@]}" | grep -qx "kb-search" && ! printf '%s\n' "${SKI
     echo "  NOTE: installing kb-search without token-aware. Its search policy" >&2
     echo "        (token-aware/references/search_policy.md) is a hard dependency;" >&2
     echo "        install token-aware too, or kb-search has no gating rule." >&2
+fi
+
+# close-session composes retrospective/critique/handoff; it degrades gracefully without
+# them (runs each missing phase's shape inline, per its own SKILL.md), so this is informational.
+if printf '%s\n' "${SKILLS[@]}" | grep -qx "close-session"; then
+    for companion in retrospective critique handoff; do
+        if ! printf '%s\n' "${SKILLS[@]}" | grep -qx "$companion"; then
+            echo "  NOTE: installing close-session without $companion. It still works," >&2
+            echo "        running that phase inline at reduced quality; install $companion too" >&2
+            echo "        for the full protocol." >&2
+        fi
+    done
 fi
 
 mkdir -p "$DEST_DIR"

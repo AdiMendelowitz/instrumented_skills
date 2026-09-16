@@ -2,9 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
-![Skills](https://img.shields.io/badge/skills-5-informational)
+![Skills](https://img.shields.io/badge/skills-6-informational)
 
-**One discipline, five skills: log state externally, read it back before acting, and
+**One discipline, six skills: log state externally, read it back before acting, and
 never let a suggestion pass as a decision.** Built for Claude Code and any other agent
 surface with a persistent filesystem. Each skill works standalone; together they let
 repeated work on the same target compound instead of restarting from zero every session.
@@ -16,13 +16,18 @@ repeated work on the same target compound instead of restarting from zero every 
 | [`retrospective/`](retrospective/) | Panel-style retros with anchored lenses, no finding without a quote, line, or named absence, and a cost lens that reports nothing rather than invents an ROI. Capture can be manual or automatic via a Stop hook. | Ships complete, optional capture hook |
 | [`handoff/`](handoff/) | A structured end-of-session snapshot, schema instead of prose, so a decision and a suggestion can't blur together a few sessions later. Ships with a savings/lint toolkit and an optional session-length hook. | Ships complete, 55 tests pass |
 | [`kb-search/`](kb-search/) | Ranked BM25 search over what the other four write. Standard library only, no LLM call. | Ships complete, tests pass (run for current count) |
+| [`close-session/`](close-session/) | Runs `retrospective`, `critique` and `handoff` as one end-of-session pipeline: adversarial retro, critique of that retro to convergence, an independently-forked verification pass, then the next session's literal first prompt, ROI-ranked and pre-critiqued. | Ships complete |
 
 A companion write-up on the reasoning behind these will be linked here once it's published.
 
 ## Status of this repo
 
-All five ship complete: full protocols and references, each with a real, tested toolkit
+All six ship complete: full protocols and references, each with a real, tested toolkit
 behind it, not just a specification. `critique` and `kb-search` need nothing further.
+`close-session` needs nothing further either. It degrades gracefully, not a hard
+dependency: where one of `retrospective`, `critique` or `handoff` isn't installed, it
+runs that phase's shape inline and says so, per its own SKILL.md. It works best with all
+three, but installing it alone is a supported, if reduced, configuration.
 `token-aware` needs `tools/rates.json` filled in with current, verified rates before its
 numbers mean anything (it ships with placeholder rates and an intentionally-expired date,
 see its `_comment` field, so the loader refuses to compute rather than return a silent
@@ -45,12 +50,12 @@ selected skill to `~/.claude/skills/`, archives whatever it replaces first, and 
 git clone <this-repo-url>
 cd instrumented_skills
 
-./install.sh                              # macOS/Linux, installs all five skills
+./install.sh                              # macOS/Linux, installs all six skills
 ./install.sh critique token-aware         # or just the ones you want
 ```
 
 ```powershell
-.\install.ps1                                   # Windows, installs all five skills
+.\install.ps1                                   # Windows, installs all six skills
 .\install.ps1 -Skills critique,token-aware       # or just the ones you want
 ```
 
@@ -114,6 +119,13 @@ or a trigger signal, not data. In words:
 Every connection is read-only and, apart from kb-search's policy dependency, optional:
 `critique` works standalone, and `token-aware` and `retrospective` fall back gracefully
 when no counters data exists.
+
+`close-session` isn't a sixth node in the diagram above, since it isn't a peer
+artifact-writer: it runs `retrospective`, `critique` and `handoff`'s own protocols
+directly as an end-of-session pipeline (retro, critique the retro to convergence, an
+independently-forked verification pass that writes the handoff), then builds the next
+session's opening prompt from what they produced. It's the composition, not another
+artifact source.
 
 ## Customising for your own setup
 
