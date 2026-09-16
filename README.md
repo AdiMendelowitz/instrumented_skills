@@ -20,24 +20,34 @@ repeated work on the same target compound instead of restarting from zero every 
 
 A companion write-up on the reasoning behind these will be linked here once it's published.
 
+## Contents
+
+- [Status of this repo](#status-of-this-repo)
+- [Install](#install)
+- [How the skills connect](#how-the-skills-connect)
+- [Customising for your own setup](#customising-for-your-own-setup)
+- [License](#license)
+
 ## Status of this repo
 
 All six ship complete: full protocols and references, each with a real, tested toolkit
-behind it, not just a specification. `critique` and `kb-search` need nothing further.
-`close-session` needs nothing further either. It degrades gracefully, not a hard
-dependency: where one of `retrospective`, `critique` or `handoff` isn't installed, it
-runs that phase's shape inline and says so, per its own SKILL.md. It works best with all
-three, but installing it alone is a supported, if reduced, configuration.
-`token-aware` needs `tools/rates.json` filled in with current, verified rates before its
-numbers mean anything (it ships with placeholder rates and an intentionally-expired date,
-see its `_comment` field, so the loader refuses to compute rather than return a silent
-wrong number). `retrospective` and `handoff` each ship an optional hook
-(`retrospective/scripts/retro_capture.py`, a Stop hook for automatic journal capture;
-`handoff/tools/session_watch.py`, a UserPromptSubmit hook for session-length nudges) that
-needs registering in `settings.json` to run automatically; both skills work without it,
-using their manual modes. Run every test suite yourself before trusting the numbers, not
-instead of running them; a count in prose drifts the moment a test is added. Check the
-⚠️ / note sections in each skill's README before relying on it for anything load-bearing.
+behind it, not just a specification.
+
+| Skill | Needs before you rely on it | Optional extras |
+|---|---|---|
+| `critique` | Nothing further | |
+| `kb-search` | Nothing further | |
+| `close-session` | Nothing further. Degrades gracefully: where `retrospective`, `critique` or `handoff` isn't installed, it runs that phase's shape inline and says so, per its own `SKILL.md`. Works best with all three; alone is a supported, reduced configuration. | |
+| `token-aware` | `tools/rates.json` filled in with current, verified rates. Ships with placeholder rates and an intentionally-expired date (see the `_comment` field), so the loader refuses to compute rather than return a silent wrong number. | |
+| `retrospective` | Nothing further to run manually. | Optional Stop hook (`scripts/retro_capture.py`) for automatic journal capture. Works fine without it, using manual mode. |
+| `handoff` | Nothing further to run manually. | Optional UserPromptSubmit hook (`tools/session_watch.py`) for session-length nudges. Works fine without it, using manual mode. |
+
+Hooks that get added need registering in `settings.json` to run automatically.
+
+> [!WARNING]
+> Run every test suite yourself before trusting the numbers above, not instead of running
+> them: a count in prose drifts the moment a test is added. Check the ⚠️ / note sections in
+> each skill's own README before relying on it for anything load-bearing.
 
 ## Install
 
@@ -78,6 +88,9 @@ durable artifacts (critique logs, retro journals, handoff snapshots, token-aware
 logs); `kb-search` is the shared read-path over all of them, and `token-aware` owns the
 policy that says when to use it.
 
+Solid arrows are artifacts written and later read. Dashed arrows are a policy dependency
+or a trigger signal, not data.
+
 ```mermaid
 flowchart LR
     critique -->|log + counters| kb[kb-search]
@@ -94,8 +107,8 @@ flowchart LR
     handoff -.->|may trigger LITE| retrospective
 ```
 
-Solid arrows are artifacts written and later read. Dashed arrows are a policy dependency
-or a trigger signal, not data. In words:
+<details>
+<summary>How each connection actually works</summary>
 
 - `kb-search` reads what the others write. `critique` reconciles a target against its own
   last log entry; `kb-search` lets a run ask whether the same root cause fired on any
@@ -126,6 +139,8 @@ directly as an end-of-session pipeline (retro, critique the retro to convergence
 independently-forked verification pass that writes the handoff), then builds the next
 session's opening prompt from what they produced. It's the composition, not another
 artifact source.
+
+</details>
 
 ## Customising for your own setup
 
