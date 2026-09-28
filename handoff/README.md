@@ -9,7 +9,7 @@ committed to starts getting treated as settled.
 
 | | |
 |---|---|
-| **Protocol** | v3.3, 8 labeled sections, pipe-delimited fields, no prose |
+| **Protocol** | v3.3, 8 labelled sections, pipe-delimited fields, no prose |
 | **Toolkit** | `tools/measure_savings.py` (lint, state-check, compare); `tools/session_watch.py` (optional session-length hook) |
 | **Tests** | pass; run `python -m pytest -q` for the current count |
 | **Depends on** | nothing (PATTERN sourcing and the closing review step pair optionally with `critique`/`retrospective`) |

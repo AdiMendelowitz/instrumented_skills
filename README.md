@@ -12,13 +12,13 @@ repeated work on the same target compound instead of restarting from zero every 
 | Skill | What it does | Status |
 |---|---|---|
 | [`critique/`](critique/) | Adversarial multi-lens review of a file, with memory: reads its own prior log before starting, so a second pass reconciles what changed instead of rediscovering it. | Ships complete |
-| [`token-aware/`](token-aware/) | LLM cost reduction for prompts and pipelines. Deterministic arithmetic in Python, rates dated and source-tagged, refuses to compute against stale numbers. | Ships complete, 36 tests pass |
+| [`token-aware/`](token-aware/) | LLM cost reduction for prompts and pipelines. Deterministic arithmetic in Python, rates dated and source-tagged, refuses to compute against stale numbers. | Ships complete, 70 tests pass |
 | [`retrospective/`](retrospective/) | Panel-style retros with anchored lenses, no finding without a quote, line, or named absence, and a cost lens that reports nothing rather than invents an ROI. Capture can be manual or automatic via a Stop hook. | Ships complete, optional capture hook |
 | [`handoff/`](handoff/) | A structured end-of-session snapshot, schema instead of prose, so a decision and a suggestion can't blur together a few sessions later. Ships with a savings/lint toolkit and an optional session-length hook. | Ships complete, 55 tests pass |
 | [`kb-search/`](kb-search/) | Ranked BM25 search over what the other four write. Standard library only, no LLM call. | Ships complete, tests pass (run for current count) |
 | [`close-session/`](close-session/) | Runs `retrospective`, `critique` and `handoff` as one end-of-session pipeline: adversarial retro, critique of that retro to convergence, an independently-forked verification pass, then the next session's literal first prompt, ROI-ranked and pre-critiqued. | Ships complete |
 
-A companion write-up on the reasoning behind these will be linked here once it's published.
+The reasoning behind these, one post per skill, is on the companion blog: [Skills That Remember](https://blog.adimendelowitz.dev/skills/intro.html).
 
 ## Why
 

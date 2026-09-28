@@ -122,7 +122,7 @@ means the transcript path was wrong or held no countable user turns. The hook fa
 by design so it can never block a prompt, and that same property is what allows silent
 failure, so re-run this check after any Python upgrade, settings edit, or path change.
 
-## Known behavior worth expecting
+## Known behaviour worth expecting
 
 - **The count is a floor.** Claude Code writes the transcript asynchronously, so it can
   lag the live conversation by a turn or two. Messages say "at least" for this reason.

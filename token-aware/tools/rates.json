@@ -1,35 +1,76 @@
 {
-  "_comment": "TEMPLATE, INTENTIONALLY ALREADY EXPIRED. Every rate below is a placeholder (0.0), and 'expires' is set in the past on purpose so cost.py's own loader refuses to compute anything until you replace these values. That refusal is the intended first-run experience, not a bug. Verify every rate against https://www.anthropic.com/pricing, then set verified/expires/source/provenance for real.",
+  "_comment": "TEMPLATE, INTENTIONALLY ALREADY EXPIRED. Every rate below is a placeholder (0.0), and 'expires' is set in the past on purpose so cost.py's own loader refuses to compute anything until you replace these values. That refusal is the intended first-run experience, not a bug. Verify every figure against the pricing and prompt-caching pages, then set verified/expires/source and a dated provenance entry per fact. cost.py warns on any fact older than 30 days and refuses past 90.",
   "verified": "2020-01-01",
   "expires": "2020-01-08",
-  "source": "https://www.anthropic.com/pricing",
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing",
   "units": "USD per million tokens",
   "models": {
-    "<model-id>": {"in": 0.0, "out": 0.0, "cache_min_tokens": 0}
+    "<model-id>": {
+      "in": 0.0,
+      "out": 0.0,
+      "cache_min_tokens": 0,
+      "cache_read_mult": 0.1,
+      "tokenizer_factor": 1.3,
+      "tool_overhead": {
+        "auto": 0,
+        "any": 0
+      }
+    }
   },
   "multipliers": {
     "cache_write_5m": 1.25,
     "cache_write_1h": 2.0,
     "cache_read": 0.1,
-    "batch": 0.5
+    "batch": 0.5,
+    "region_us_only": 1.1
   },
   "modifiers": {
-    "tool_system_overhead_tokens": null,
-    "region_us_only": null,
-    "long_context_threshold_tokens": null,
-    "long_context_in": null,
-    "long_context_out": null
+    "long_context_surcharge": null
   },
   "notes": {
-    "tool_system_overhead_tokens": "Tool-enabled requests may carry a fixed system-prompt overhead. Confirm the current figure on the tool-use docs page, then fill.",
-    "region_us_only": "Some providers report a premium for region-restricted routing against the global default. Confirm on the pricing page, then fill.",
-    "long_context_threshold_tokens": "Some models surcharge above a context threshold. Confirm per model on the pricing page, then fill.",
-    "cache_min_tokens": "Omit the key for any model whose minimum is neither documented nor measured; a guess must never be readable as fact."
+    "cache_read_mult": "Per-model cache-hit multiplier; omit the key to use multipliers.cache_read. Some models list their own (check the prompt-caching page).",
+    "tokenizer_factor": "Tokens per previous-generation token. Anthropic documents ~30% more tokens for Claude 4.7 and later (1.3); use 1.0 for earlier models. Omitted keys default to 1.3, the conservative direction.",
+    "tool_overhead": "System-prompt tokens added to every tool-enabled request: 'auto' for tool_choice auto/none, 'any' for any/tool. Omit a key the pricing page does not list; cost.py raises rather than assuming zero.",
+    "region_us_only": "Data-residency multiplier on every token category where the provider charges one. Confirm on the pricing page.",
+    "long_context_surcharge": "1.0 where the full context window bills at standard rates. Leave null until confirmed; a null modifier is excluded and named in every output.",
+    "cache_min_tokens": "Omit the key for any model whose minimum is neither documented nor measured; a guess must never be readable as fact.",
+    "region_us": "Set \"region_us\": false on a model where data-residency pricing does not apply (Anthropic lists it for Claude 4.6 and later); cost.py then raises rather than pricing region 'us'."
   },
   "provenance": {
-    "models.rates": {"class": "unverified", "url": "", "date": ""},
-    "models.cache_min_tokens": {"class": "unverified", "url": "", "date": ""},
-    "multipliers": {"class": "unverified", "url": "", "date": ""},
-    "modifiers": {"class": "unverified", "url": "", "date": ""}
+    "models.rates": {
+      "class": "unverified",
+      "url": "",
+      "date": ""
+    },
+    "models.cache_min_tokens": {
+      "class": "unverified",
+      "url": "",
+      "date": ""
+    },
+    "models.cache_read_mult": {
+      "class": "unverified",
+      "url": "",
+      "date": ""
+    },
+    "models.tokenizer_factor": {
+      "class": "unverified",
+      "url": "",
+      "date": ""
+    },
+    "models.tool_overhead": {
+      "class": "unverified",
+      "url": "",
+      "date": ""
+    },
+    "multipliers": {
+      "class": "unverified",
+      "url": "",
+      "date": ""
+    },
+    "modifiers": {
+      "class": "unverified",
+      "url": "",
+      "date": ""
+    }
   }
 }

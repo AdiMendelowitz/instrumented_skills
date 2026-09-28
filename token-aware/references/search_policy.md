@@ -11,7 +11,7 @@ order:
 
 | File | Reference |
 |---|---|
-| `token-aware/SKILL.md` | § Precedence: one line naming this file as canonical for search-tool choice |
+| `token-aware/SKILL.md` | § Precedence: one line naming this file as canonical for search-tool choice (reconciled 2026-09-28; the duplicated section noted on 2026-08-06 is gone) |
 | `kb-search/SKILL.md` | § When to use it, and when not to: defers the grep-vs-kb-search decision here |
 
 **This file is canonical for which layer to search with. It says nothing about what any

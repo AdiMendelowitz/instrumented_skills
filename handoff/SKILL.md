@@ -22,7 +22,7 @@ this into a measured figure against your own real snapshots, and replace this se
 with the result once you have one.
 
 ```
-HANDOFF v3.2 | <date> | supersedes: <prior handoff id or none> | session-length: <short|long>
+HANDOFF v3.3 | <date> | supersedes: <prior handoff id or none> | session-length: <short|long>
 OBJ: <next objective, one line>
 STATE            <=8 lines, paths first, then installs, then running processes
   <path> | v<x> | <n>L <n>B | <purpose, 6 words max>
@@ -74,7 +74,7 @@ FIRST            1 line
   where this protocol is usually invoked, so a snapshot written around two-thirds through
   and updated at close beats one authored entirely at the end. Where a session-length
   hook is installed (`tools/session_watch.py`), its first nudge is the cue.
-- On resumption, the next session restates STATE and OBJ in its own words before acting,
+- On resumption, the next session restates STATE, OBJ, and OPEN in its own words before acting,
   and asks about any line it cannot ground. A snapshot that reads coherently but transfers
   nothing fails silently otherwise, and the restatement is what surfaces it on turn one
   rather than three turns into the wrong work.

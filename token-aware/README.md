@@ -8,8 +8,8 @@ cache break-even claim once contradicted the multipliers printed right beside it
 
 | | |
 |---|---|
-| **Toolkit** | `tools/cost.py`, 7 subcommands, standard library only |
-| **Tests** | 36 pass, run against fixture data, independent of `rates.json` |
+| **Toolkit** | `tools/cost.py`, 10 subcommands, standard library only (v2.4) |
+| **Tests** | 70 pass, run against fixture data, independent of `rates.json` |
 | **Depends on** | nothing to install; `rates.json` must be filled in before real use |
 | **Ships** | complete |
 
@@ -53,13 +53,19 @@ cache break-even claim once contradicted the multipliers printed right beside it
 - `references/search_policy.md`: canonical layer order for retrieval (grep, then
   kb-search, then a code-graph tool) with escalation checkpoints and the sources behind the
   ordering. `SKILL.md` § Precedence points here rather than restating it.
+- `references/metering.md`: where measured actuals come from on each surface (provider
+  `usage`, a Headroom proxy's `/stats`, ccusage) and how estimates are paired with them.
 - `tools/cost.py`: subcommands `cost`, `breakeven`, `compare`, `estimate`, `verify`,
-  `render`, `cpd`, with a `--log` flag on `cost` that appends to `cost_log.jsonl`. Pure
-  functions, no network calls, refuses to compute anything against an expired rate table.
+  `render`, `cpd`, `headroom`, `pairs`, `check`, with a `--log` flag on `cost` and `headroom`
+  that appends to `cost_log.jsonl` (or `$TOKEN_AWARE_LOG`; the repo's `.gitignore` keeps the
+  log out of commits). Pure functions; network calls happen only in `headroom` (a local
+  proxy's `/stats`) and `check` (LiteLLM's price map, used to flag drift, never to update). Refuses to compute against an expired rate table or any
+  fact older than 90 days, and warns past 30.
 
 ## The decision order
 
-Evaluate every call site in this order and stop at the first category that applies.
+Evaluate every call site in this order. BATCH and CACHE stack with the other outcomes, so a
+BATCH-eligible call is still checked for REPLACE.
 `audit_workflow.md` and `SKILL.md` § Decision order carry the full reasoning; this is the
 shape of it. Green endings are a clear win; the amber ending still owes a justification.
 
@@ -97,6 +103,7 @@ token-aware/
   references/module_layout.md
   references/python_replacements.md
   references/search_policy.md
+  references/metering.md
   tools/cost.py
   tools/test_cost.py
   tools/rates.json            <- fill in with current, verified rates
@@ -108,7 +115,7 @@ Copy the folder to wherever your surface reads skills from. The toolkit resolves
 ```bash
 cd token-aware/tools
 pip install pytest      # or: pip install pytest --break-system-packages, depending on your environment
-python -m pytest -q     # 36 tests, all pass regardless of what's in rates.json;
+python -m pytest -q     # 70 tests, all pass regardless of what's in rates.json;
                          # they run against their own fixture data, not the shipped template
 python cost.py render   # will refuse until rates.json has real, unexpired dates
 ```
@@ -118,7 +125,8 @@ python cost.py render   # will refuse until rates.json has real, unexpired dates
 **Fill in `rates.json` first.** Read Anthropic's pricing page, fill in `models`, set
 `verified` to today and `expires` to a real future date (a sensible default is the
 sooner of a known upcoming rate change or 90 days out), and update `provenance` to
-`first-party` with the URL you read. Leave any `modifiers` field `null` until you've
+`first-party` with the URL and date you read, per fact. Add `cache_read_mult`,
+`tokenizer_factor` and `tool_overhead` per model where the pricing page lists them. Leave any `modifiers` field `null` until you've
 independently confirmed it. A null modifier is excluded from every calculation and named
 in the output, which is the point: an under-estimate stays visible instead of silent.
 

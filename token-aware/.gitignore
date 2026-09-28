@@ -1,0 +1,6 @@
+# private usage records and local artefacts never ship with the skill
+tools/cost_log.jsonl
+*.bak-*
+__pycache__/
+.pytest_cache/
+tools/rates.v2.json

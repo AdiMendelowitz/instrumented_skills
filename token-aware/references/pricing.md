@@ -1,4 +1,4 @@
-# Pricing and caching mechanics | v1.3 | template, re-verify before use
+# Pricing and caching mechanics | v1.4 | template, re-verify before use
 
 Canonical rates live in `tools/rates.json`. The table below is a generated snapshot; regenerate with `python tools/cost.py render`. Every fact carries a source class: `first-party` (Anthropic docs, cookbook, pricing page), `measured` (local probe), `secondary` (aggregator, used only where no first-party statement exists), or `unverified` (the template's placeholder default before anyone has checked it).
 
@@ -20,12 +20,11 @@ number.
 `python tools/cost.py render` after filling in `tools/rates.json` with current figures
 from Anthropic's pricing page. Do not publish or rely on the numbers below as current.*
 
-| Model | Input | Output | Min cacheable |
-|---|---|---|---|
-| `<model-id>` | $x.xx | $x.xx | n |
-| `<model-id>` | $x.xx | $x.xx | n |
+| Model | Input | Output | Cache read | Min cacheable | Tokenizer factor |
+|---|---|---|---|---|---|
+| `<model-id>` | $x.xx | $x.xx | 0.1x | n | 1.3 |
 
-Source: https://www.anthropic.com/pricing. Multipliers: cache_write_5m 1.25x, cache_write_1h 2.0x, cache_read 0.1x, batch 0.5x. These multiplier *ratios* have been stable across model generations; the base per-token rates have not, so verify rates independently of multipliers.
+Source: https://platform.claude.com/docs/en/about-claude/pricing. Multipliers: cache_write_5m 1.25x, cache_write_1h 2.0x, cache_read 0.1x, batch 0.5x. These multiplier *ratios* have been stable across model generations; the base per-token rates have not, so verify rates independently of multipliers.
 
 **What this does to model-tier decisions.** Output tokens typically cost several times
 input tokens across current model families, so reducing output length is often a bigger
@@ -122,3 +121,7 @@ object is present in the usage response, read its per-TTL fields and log both, f
 back to the flat field only when the nested object is absent.
 
 Truncation warning: see the `max_tokens` rule in `prompt_rules.md`, which owns it.
+
+## Schema additions in v2.3
+
+Per model, `rates.json` can carry `cache_read_mult` (where the caching page lists a model-specific cache-hit price), `tokenizer_factor` (tokens per previous-generation token; Anthropic documents about 1.3 for Claude 4.7 and later) and `tool_overhead` (`auto`, `any`). Provenance entries are dated per fact: `cost.py` warns on any fact older than 30 days and refuses past 90, as it already refuses an expired table. Measured actuals and their pairing with estimates are in `metering.md`.

@@ -20,7 +20,7 @@ once if the reasoning here feels unmotivated; this file is the part that runs.
 
 This skill assumes three companions are installed alongside it: a `retrospective` skill (an
 adversarial, tiered retro protocol with a journal and an actions log), a `critique` skill
-(adversarial multi-lens document review with SEV grading), and a `handoff` skill (a labeled
+(adversarial multi-lens document review with SEV grading), and a `handoff` skill (a labelled
 state-transfer schema: STATE/DECIDED/PROPOSED/REJECTED/OPEN/UNVERIFIED/PATTERN/FIRST). Where one
 isn't installed, run that phase's spirit inline using the shape described here rather than
 skipping it, and say plainly that the phase ran without its usual protocol.
@@ -42,7 +42,8 @@ storage rule is the same on all of them, only the write mechanism differs:
 
 - Local Claude Code: a filesystem, `.claude/` writable, hooks configured.
 - Cowork or claude.ai with a connected folder: writes go through the device bridge, which
-  refuses `.claude/` and `.git/`.
+  refuses `.claude/` and `.git/`; skill state is staged per Destinations rule 2 and a
+  `.claude/` write is never attempted or proposed there.
 - Cowork or claude.ai with no folder: only the attached Project's docs can be written.
 
 On every surface, skill state (`actions.jsonl`, the journal, critique-log lines) belongs under
@@ -197,7 +198,7 @@ skill is installed to (an account-level skill sync, additional device or repo co
 that surface's own read-back mechanism, not assumed from a write or sync confirmation alone,
 and confirm each shows the same PROTOCOL version.
 
-## Destinations (DESTINATIONS v1; identical in retrospective, critique, handoff, close-session)
+## Destinations (DESTINATIONS v1; full text: `references/destinations.md`, identical across retrospective, critique, handoff, close-session)
 
 1. Resolve the write target from the project CLAUDE.md section "Where internal files live"
    (in Cowork, stage the project's CLAUDE.md to read it). If absent: notes root is
@@ -205,14 +206,19 @@ and confirm each shows the same PROTOCOL version.
    `<notes-root>/README.md` and the CLAUDE.md block and hand over the `.gitignore` line.
    Never a folder named after a tool, never "Claude outputs".
 2. Skill state (`actions.jsonl`, the journal, critique-log lines) is canonical under `.claude/`.
-   Attempt that write first; on refusal ("Writing to .claude is not permitted via remote
-   tools") stage the lines as `<notes-root>/prepared/pending-<kind>-<date>.jsonl`, report
-   "staged, not landed" with the expected post-append line count, and hand over the append
-   command (PowerShell 5.1, `System.IO.File` with BOM-less UTF-8).
+   Attempt that write first on a surface with real shell access to `.claude/` (Claude Code, a
+   local terminal). On the Cowork device bridge, `.claude/` writes are refused ("Writing to
+   .claude is not permitted via remote tools") and MUST NOT be attempted or proposed there,
+   including as a manual command handed to the user: stage the lines instead at
+   `<notes-root>/prepared/pending-<kind>-<date>.jsonl` and report "staged, not landed" with
+   the expected post-append line count. That staged file is the final resting place on
+   Cowork, not a step toward a later `.claude/` write. (Corrected 2026-09-14: the previous
+   wording of this rule told Cowork sessions to hand over a `.claude/` append command after
+   staging; that recurred as the exact behaviour the user had already asked to stop.)
 3. Documents: retro to `<notes-root>/retros/`, handoff to `<notes-root>/handoffs/`, session
    prompt to `<notes-root>/prompts/`, filename per the project table, else the skill's own
-   default. A copy under `.claude/` is byte-identical or absent. A critique patch stays
-   beside its target.
+   default. A copy under `.claude/` is byte-identical or absent (on Cowork, absent, per rule
+   2). A critique patch stays beside its target.
 4. Delivery to a connected folder: write under `/mnt/user-data/outputs/`, commit with
    `device_commit_files` (`stagedPath` plus the exact `devicePath`), then re-stage and compare
    md5. Never `SendUserFile` while any folder is connected. `written: true` is not evidence.

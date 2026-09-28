@@ -1,6 +1,6 @@
 # Retrospective panel: facilitator protocol and lenses
 
-Facilitator protocol and lens definitions for RUN mode T3 (see `../SKILL.md` for the tier scale). Lenses are analytical stances, deliberately kept in one file per the domain-over-persona architecture rule.
+Facilitator protocol and lens definitions for RUN mode R3, at every tier: the tier sets how many lenses sit (see the tier table in `../SKILL.md`), not whether this file applies. Lenses are analytical stances rather than simulated people, and all of them live in this one file so a lens can be added or changed without touching the protocol.
 
 ## Facilitator
 
@@ -29,7 +29,7 @@ Standing questions: which claims would not survive peer review? Where did rigour
 Standing questions: leakage, seed discipline, evaluation validity, baseline honesty? Were negative results recorded or quietly dropped? Does the pipeline hold under the project's own stated conventions (e.g. correctness before speed, from-scratch validation before optimising)?
 
 **tech lead / architect**: structure, maintainability, operability.
-Standing questions: what will be hardest to change in 6 months, and was that chosen or drifted into? Which shortcuts became load-bearing? Where does the single-ownership rule get violated?
+Standing questions: what will be hardest to change in 6 months, and was that chosen or drifted into? Which shortcuts became load-bearing? Where does a component, file, or decision have two owners, or none?
 
 **finance / investment advisor**: cost, ROI, opportunity cost.
 Standing questions: what did this consume in hours, tokens, and money against the value shipped? Which activity had the worst return and what was displaced to fund it? Where would 20% of the spend have bought 80% of the result?

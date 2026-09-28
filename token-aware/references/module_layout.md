@@ -11,6 +11,8 @@ utils/
 
 `python_replacements.py` module docstring, verbatim:
 
+Without `TOKENIZER_FACTOR` the 0.8 safety margin no longer covers the newer tokenizer: 3.5 x 0.8 = 2.8 chars/token against 3.5 / 1.3 = 2.69, about 4% under on prose, and truncation keeps about 30% more text than the budget allows. `tools/cost.py` carries the factor per model in `rates.json`.
+
 ```python
 """
 Pure Python replacements for LLM calls identified during the token optimisation audit.
@@ -38,7 +40,7 @@ Dividing character count by a chars-per-token constant produces a **smaller** nu
 Tokenizer density is not stable across model generations: a constant calibrated on one generation can under- or over-report on a newer one if the newer tokenizer packs a different number of characters per token. Verify the current ratio with `count_tokens` (§ Validate estimates against actuals) rather than carrying a fixed constant forward across a model change.
 
 ```python
-"""utils/prompt_builders.py: centralized prompt construction."""
+"""utils/prompt_builders.py: centralised prompt construction."""
 from __future__ import annotations
 import logging
 
@@ -53,6 +55,7 @@ logger = logging.getLogger(__name__)
 CHARS_PER_TOKEN_PROSE: float = 3.5
 CHARS_PER_TOKEN_CODE: float = 2.5
 BUDGET_SAFETY: float = 0.8          # shrinks chars/token, so token estimates run high
+TOKENIZER_FACTOR: float = 1.3       # tokens per previous-generation token: ~1.3 on Claude 4.7+, 1.0 before
 TOKEN_WARN_THRESHOLD: int = 2_000
 JSON_ONLY_SUFFIX: str = "\n\nReturn JSON only. No prose. No markdown fences."
 
@@ -60,7 +63,7 @@ JSON_ONLY_SUFFIX: str = "\n\nReturn JSON only. No prose. No markdown fences."
 def estimate_tokens(text: str, code: bool = False) -> int:
     """Deliberate over-estimate, for budgeting and warnings only. Never for billing."""
     base = CHARS_PER_TOKEN_CODE if code else CHARS_PER_TOKEN_PROSE
-    return int(len(text) / (base * BUDGET_SAFETY))
+    return int(len(text) / (base * BUDGET_SAFETY) * TOKENIZER_FACTOR)
 
 
 def truncate_to_tokens(text: str, max_tokens: int, code: bool = False) -> str:
@@ -75,7 +78,7 @@ def truncate_to_tokens(text: str, max_tokens: int, code: bool = False) -> str:
     Where count_tokens is available, prefer it over this estimate for truncation.
     """
     base = CHARS_PER_TOKEN_CODE if code else CHARS_PER_TOKEN_PROSE
-    max_chars = int(max_tokens * base)
+    max_chars = int(max_tokens * base / TOKENIZER_FACTOR)
     if len(text) <= max_chars:
         return text
     truncated = text[:max_chars]

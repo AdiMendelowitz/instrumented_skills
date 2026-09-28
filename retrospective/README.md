@@ -11,7 +11,7 @@ Stop hook that extracts marker lines from the transcript, no LLM call).
 
 | | |
 |---|---|
-| **Protocol** | v1.5 |
+| **Protocol** | v1.8 |
 | **Modes** | LOG, RUN (T1/T2/T3), ACTIONS, LITE |
 | **Capture** | manual, or automatic via `scripts/retro_capture.py` (regex, stdlib only) |
 | **Lenses** | 8 standing, each capped at 3 anchored findings |
@@ -46,6 +46,8 @@ flowchart LR
     Trigger -->|week/sprint, 16-60 lines| T2[T2 medium retro<br/>facilitator + 4 lenses]
     Trigger -->|close-out, 61+ lines| T3[T3 full panel<br/>facilitator + 8 lenses]
     Trigger -->|paired skill auto-fires| LITE[LITE<br/>up to 12 lines, no panel]
+    LITE -.->|journal lines| J
+    LITE -->|at most 1 action| AJ
     T1 --> AJ[(actions.jsonl)]
     T2 --> AJ
     T3 --> AJ
@@ -115,14 +117,16 @@ and the array form needs no quoting for paths with spaces.
 session, to `<project>/.claude/retro-log/journal/<slug>.jsonl`, where `<project>`
 resolves from `$CLAUDE_PROJECT_DIR` or the hook's own `cwd` input. Slug defaults to the
 project directory name; override with `RETRO_SLUG` for a name that doesn't match the
-folder. Idempotent per session by exact `sid` match against the whole file, not a tail
-scan, so a large journal never causes a session to be silently reprocessed.
+folder. Claude Code fires `Stop` at the end of every turn, not once per session, so the
+hook deduplicates per session: it reads the whole journal, skips any marker already
+written under the current session id, and writes only new ones. A marker typed in the
+last turn of a long session is captured; a marker seen on ten turns is written once.
 
-**When extraction finds nothing**, a `zero-extract` line goes to
-`retro-log/capture-errors.log` rather than the hook staying silent. That distinction
+**When a session's transcript holds no marker at all**, one `zero-extract` line per
+session goes to `retro-log/capture-errors.log` rather than the hook staying silent. That distinction
 matters: a hook that fires but writes nothing looks identical to a broken hook from the
 outside. In this skill's own development, that exact gap went undetected until the
-diagnostic path was added in v2.4 (see the version history in
+diagnostic path was added in the hook's own v2.4, now v2.5 (see the version history in
 `scripts/retro_capture.py`'s module docstring).
 
 ## Storage
@@ -138,7 +142,9 @@ diagnostic path was added in v2.4 (see the version history in
 
 `global` is a reserved slug for a cross-project retro: it reads the retro *documents* (not
 journals) of the project roots named at invocation, and writes its own document into the
-invoking project's store.
+invoking project's `<notes-root>/retros/`. Known limitation, stated in `SKILL.md`: RUN mode
+currently reads one root at a time, so a `global` retro covers the invoking project's root
+only, until R1 is rewritten to iterate the named list.
 
 ## Ground rules (binding at every RUN tier)
 
@@ -190,5 +196,6 @@ SKILL.md                    LOG/RUN/ACTIONS/LITE modes, storage schema, ground r
 references/panel.md         facilitator protocol + 8 lenses + project-persona extension point
 references/lite.md          the LITE trigger test and protocol, for paired skills
 references/formats.md       the retro document template
+references/destinations.md  where documents and skill state go on each surface (shared with critique, handoff, close-session)
 scripts/retro_capture.py    Stop hook: deterministic marker extraction, no LLM call
 ```

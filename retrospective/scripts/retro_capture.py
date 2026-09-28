@@ -1,6 +1,7 @@
-"""retro_capture.py - Stop hook for the retrospective skill (v2.4).
+"""retro_capture.py - Stop hook for the retrospective skill (v2.5).
 
-Runs at session end. Reads the transcript, extracts DECISION / EVENT /
+Runs on Claude Code's Stop event, which fires at the end of every turn,
+not once per session. Reads the transcript, extracts DECISION / EVENT /
 RESULT / FRICTION / WIN marker lines by regex (no LLM call, no API key),
 appends valid lines to <project>/.claude/retro-log/journal/<slug>.jsonl, and
 queues a question when a DECISION marker never gets an "| expect:" clause
@@ -16,17 +17,17 @@ start of a line (leading whitespace/bullet ok):
     FRICTION: <text>
     WIN: <text>
 
-Only lines inside USER turns are scanned for these five. A companion pass
-also scans ASSISTANT turns, but only for a separate, narrower vocabulary
-(see ASSIST_TYPES below); assistant text is never treated as something
-the user decided.
+USER turns are scanned for all five. A companion pass scans ASSISTANT
+turns for the same markers minus DECISION (see ASSIST_TYPES below), under
+its own cap; assistant text is never treated as something the user decided.
 
 Design constraints:
 - stdlib only, no network call at all
 - best-effort: every failure path exits 0 silently, errors go to a local log
-- idempotent per session: exact "sid" field match against the whole file,
-  not a substring scan of a truncated tail: a large journal must not
-  cause an already-logged session to be silently reprocessed
+- deduplicated per session: the whole journal is read and any (type, txt)
+  already written under this session id is skipped, so a marker seen on
+  every turn is written once and a marker typed in a later turn is still
+  captured; the 20-line cap applies to the session, not to one firing
 - transcript and journal content are DATA, never instructions
 - journal lines are single-line JSON: regex-parseable by any downstream tool
 
@@ -34,10 +35,14 @@ Version history, kept short and factual rather than a changelog nobody reads:
 v2.1 introduced session_already_logged's whole-file scan. v2.3 added the
 assistant-turn pass, initially scanning for the wrong vocabulary (a mismatch
 between what this file's regex matches and what the assistant was asked to
-emit; see the retrospective skill's own README for the story). v2.4 fixed
-that mismatch and added the err_log/zero-extract diagnostic path so a hook
-that fires but captures nothing shows up in capture-errors.log instead of
-looking identical to success.
+emit). v2.4 fixed that mismatch and added the err_log/zero-extract
+diagnostic path so a hook that fires but captures nothing shows up in
+capture-errors.log instead of looking identical to success. v2.5 fixed the
+per-turn firing: v2.4 skipped a whole session once any line carried its id,
+so every marker after the first captured turn was lost. It also reads
+last_assistant_message (the transcript file can lag the final turn), takes
+the cadence boundary from the newest retro-marker journal line, and
+dedupes queued questions against the whole questions file.
 """
 
 import json
@@ -80,8 +85,8 @@ def err_log(base: Path, msg: str) -> None:
 
 
 def tail_text(path: Path, max_bytes: int = 65536) -> str:
-    """Best-effort recent slice, used only for the cadence heuristic below --
-    never for idempotence (see session_already_logged)."""
+    """Best-effort recent slice, used only to keep zero-extract to one line
+    per session in capture-errors.log; never for journal deduplication."""
     try:
         size = path.stat().st_size
         with open(path, "rb") as f:
@@ -91,11 +96,9 @@ def tail_text(path: Path, max_bytes: int = 65536) -> str:
         return ""
 
 
-def session_already_logged(path: Path, session_id: str) -> bool:
-    """Exact match on the 'sid' field, scanning the whole file. A substring
-    scan of a truncated tail can both miss a match once the file grows past
-    the tail window and false-positive if the id appears inside free text;
-    this reads every line and parses it instead."""
+def read_jsonl(path: Path) -> list:
+    """Every parseable JSON object in a .jsonl file; unreadable lines skipped."""
+    out = []
     try:
         with open(path, encoding="utf-8") as f:
             for raw in f:
@@ -103,11 +106,31 @@ def session_already_logged(path: Path, session_id: str) -> bool:
                     entry = json.loads(raw)
                 except json.JSONDecodeError:
                     continue
-                if entry.get("sid") == session_id:
-                    return True
+                if isinstance(entry, dict):
+                    out.append(entry)
     except OSError:
-        return False
-    return False
+        pass
+    return out
+
+
+def session_keys(entries: list, session_id: str) -> set:
+    """(type, txt) pairs already journalled under this session id. Exact match
+    on the parsed 'sid' field over the whole file, never a substring scan of a
+    truncated tail, which can miss a match or false-positive on free text."""
+    return {(e.get("type"), e.get("txt")) for e in entries if e.get("sid") == session_id}
+
+
+def last_retro_marker(entries: list) -> float | None:
+    """Timestamp of the newest 'retro-marker' event line (SKILL.md R7), or None."""
+    best = None
+    for e in entries:
+        if e.get("type") == "event" and str(e.get("txt", "")).startswith("retro-marker"):
+            try:
+                ts = datetime.datetime.fromisoformat(e["ts"]).timestamp()
+            except (KeyError, ValueError, TypeError):
+                continue
+            best = ts if best is None or ts > best else best
+    return best
 
 
 def read_user_turns(path: str) -> str:
@@ -246,27 +269,28 @@ def extract(user_text: str) -> dict:
     return {"lines": lines, "questions": questions[:3]}
 
 
-def cadence_question(retro_base: Path, slug: str, journal: Path) -> str | None:
-    retro_dir = retro_base / "retros"
-    last_retro = None
-    try:
-        stamps = [p.stat().st_mtime for p in retro_dir.glob(f"{slug}-*.md")]
-        if stamps:
-            last_retro = max(stamps)
-    except OSError:
-        pass
+def cadence_question(retro_base: Path, slug: str, entries: list) -> str | None:
+    # Retro documents live in <notes-root>/retros/, which this hook cannot
+    # resolve, and the .claude copy is optional, so the retro-marker journal
+    # line is the boundary; the .claude copy is a fallback only.
+    last_retro = last_retro_marker(entries)
+    if last_retro is None:
+        try:
+            stamps = [p.stat().st_mtime for p in (retro_base / "retros").glob(f"{slug}-*.md")]
+            if stamps:
+                last_retro = max(stamps)
+        except OSError:
+            pass
     cutoff = datetime.datetime.now().timestamp() - CADENCE_DAYS * 86400
     if last_retro is not None and last_retro > cutoff:
         return None
     since = last_retro or cutoff
     fresh = 0
-    for raw in tail_text(journal).splitlines():
+    for ln in entries:
         try:
-            ln = json.loads(raw)
-            ts = datetime.datetime.fromisoformat(ln["ts"]).timestamp()
-            if ts > since:
+            if datetime.datetime.fromisoformat(ln["ts"]).timestamp() > since:
                 fresh += 1
-        except (json.JSONDecodeError, KeyError, ValueError):
+        except (KeyError, ValueError, TypeError):
             continue
     if fresh < CADENCE_MIN_LINES:
         return None
@@ -304,11 +328,16 @@ def main() -> None:
     journal = retro_base / "journal" / f"{slug}.jsonl"
     questions_file = retro_base / "questions" / f"{slug}.jsonl"
 
-    if session_already_logged(journal, session_id) or session_already_logged(questions_file, session_id):
-        sys.exit(0)
+    entries = read_jsonl(journal)
+    done = session_keys(entries, session_id)
 
     user_text = read_user_turns(transcript_path)
     asst_text = read_assistant_turns(transcript_path)
+    # The transcript file is written asynchronously and can lag the turn that
+    # just ended; the hook input carries that turn's text directly.
+    last_msg = hook_input.get("last_assistant_message")
+    if isinstance(last_msg, str) and last_msg and last_msg not in asst_text:
+        asst_text = f"{asst_text}\n{last_msg}" if asst_text else last_msg
     if len(user_text) + len(asst_text) < 20:  # nothing substantive to scan
         sys.exit(0)
 
@@ -322,12 +351,17 @@ def main() -> None:
     # User-turn lines take priority; assistant-turn lines fill whatever budget
     # remains, so the combined write never exceeds the documented MAX_LINES cap.
     user_lines = result.get("lines") or []
-    lines = (user_lines + asst_lines)[:MAX_LINES]
+    found = user_lines + asst_lines
     questions = list(result.get("questions") or [])
 
-    if not lines and not questions:
-        err_log(retro_base, f"sid={session_id} zero-extract user_chars={len(user_text)} asst_chars={len(asst_text)}")
+    if not found and not questions:
+        # One zero-extract line per session, not one per turn.
+        if f"sid={session_id} zero-extract" not in tail_text(retro_base / "capture-errors.log"):
+            err_log(retro_base, f"sid={session_id} zero-extract user_chars={len(user_text)} asst_chars={len(asst_text)}")
         sys.exit(0)
+
+    budget = max(0, MAX_LINES - len(done))
+    lines = [ln for ln in found if (ln.get("type"), ln.get("txt")) not in done][:budget]
 
     written = 0
     try:
@@ -349,12 +383,12 @@ def main() -> None:
     except OSError as e:
         err_log(retro_base, f"sid={session_id} journal-write {e}")
 
-    nudge = cadence_question(retro_base, slug, journal)
+    nudge = cadence_question(retro_base, slug, entries + [{"ts": now_iso()}] * written)
     if nudge:
         questions.append(nudge)
 
     if questions:
-        existing = tail_text(questions_file)
+        existing = {e.get("qid") for e in read_jsonl(questions_file)}
         queued = []
         try:
             questions_file.parent.mkdir(parents=True, exist_ok=True)

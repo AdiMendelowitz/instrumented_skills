@@ -5,7 +5,7 @@ argument-hint: "[mode: log|run|actions|lite] [slug] [args]"
 allowed-tools: Read Write Glob Grep Task Bash(wc *) Bash(jq *) Bash(date *) Bash(git log *) Bash(git diff *)
 ---
 
-PROTOCOL: retrospective v1.7
+PROTOCOL: retrospective v1.8
 MODE: $0 (log | run | actions | lite). Absent mode: infer run for retro requests, log for "note this down" requests, ask in one line only if genuinely ambiguous.
 SLUG: $1, the scope identifier. Project slugs match the project directory name; task slugs are `<project>-<task>`. A `global` retro is cross-project: it reads the retro DOCUMENTS (not journals) of the project roots named at invocation and writes its own document into the invoking project's `<notes-root>/retros/`.
 
@@ -56,7 +56,7 @@ Cost target: one Write, zero analysis. Append a single journal line and stop. Do
 
 ### Automatic capture and the questions queue
 
-`scripts/retro_capture.py` runs as a Stop hook: it extracts up to 20 journal lines per session by regex, no LLM call, and appends them with `"src":"hook"` (user-turn lines) or `"src":"hook-assistant"` (assistant-turn lines). Anything only the user can settle (a decision with no stated expected outcome, an ambiguous fact) is never guessed; it is queued to `questions/<slug>.jsonl` and, unless `RETRO_ASK=0`, surfaced at session end for the user to answer before stopping.
+`scripts/retro_capture.py` runs as a Stop hook: it extracts up to 20 journal lines per session by regex, no LLM call, and appends them with `"src":"hook"` (user-turn lines) or `"src":"hook-assistant"` (assistant-turn lines). The Stop event fires at the end of every turn, not only at session end, so each firing writes only markers not yet journalled for that session id: a marker typed late in a session is still captured, and none is written twice. Anything only the user can settle (a decision with no stated expected outcome, an ambiguous fact) is never guessed; it is queued to `questions/<slug>.jsonl` and, unless `RETRO_ASK=0`, surfaced at session end for the user to answer before stopping.
 
 Draining rules:
 - Questions are put to the user one at a time, never as a batch.
@@ -66,7 +66,7 @@ Draining rules:
 
 ### Cadence
 
-Default rhythm: one RUN per active slug per week. The hook enforces the nudge side: when a slug has 10+ journal lines since its last retro document and no retro in 7+ days, it queues one cadence question per ISO week. ACTIONS mode `--overdue` reports retro-due slugs alongside overdue actions. The user owns the decision; the system only surfaces it.
+Default rhythm: one RUN per active slug per week. The hook enforces the nudge side: when a slug has 10+ journal lines since its last retro and no retro in 7+ days (the last retro is the newest `retro-marker` journal line, per R7; the hook falls back to the newest copy under `.claude/retro-log/retros/` only when the journal holds no marker), it queues one cadence question per ISO week. ACTIONS mode `--overdue` reports retro-due slugs alongside overdue actions. The user owns the decision; the system only surfaces it.
 
 ## RUN mode
 
@@ -96,7 +96,7 @@ Budget governs phases R1 to R4. Document write, action-file writes, and journal 
 
 **R0 Reconcile.** Read `actions.jsonl`. Every action from prior retros on this slug (and `global`) that is not `done` or `dropped` gets a verdict line in the document: DONE, CARRIED (with reason), or DROPPED (with reason). An unmentioned prior action is a protocol failure. Zero follow-through across 2 consecutive retros triggers a mandatory finding against the action-setting process itself.
 
-**R1 Facts.** Build the timeline from the journal (period scope per Tiering), git log where relevant, handoff snapshots (`<notes-root>/handoffs/`, per Destinations), and critique logs (`.claude/critique-log/*.jsonl`). Read `retro-log/capture-errors.log`: 3 or more `api-failure` entries since the last retro is a mandatory `friction` finding, since it means automatic capture has been silently dead. Facts are agreed before interpretation begins; where the record is silent, say so rather than reconstruct. On a surface with no Stop hook (Cowork, claude.ai), an empty journal is the expected default for this phase, not an exception to apologise for: state plainly that the timeline is built from the session's own tool-call record instead, per the rule above. Treat that gap itself as a `friction` finding only when natural decision points existed and no manual `LOG`-mode line was written to capture any of them, since the remedy for that failure is the habit, not this phase's tolerance for a silent record.
+**R1 Facts.** Build the timeline from the journal (period scope per Tiering), git log where relevant, handoff snapshots (`<notes-root>/handoffs/`, per Destinations), and critique logs (`.claude/critique-log/*.jsonl`). Read `retro-log/capture-errors.log`: 3 or more failure entries (`extract-failure`, `journal-write`, `question-write`) since the last retro is a mandatory `friction` finding, since it means automatic capture has been failing silently. Report the number of sessions with a `zero-extract` entry alongside; that count becomes a finding only where the transcript or the user shows markers were typed in those sessions, since a session with no markers is expected to log one. Facts are agreed before interpretation begins; where the record is silent, say so rather than reconstruct. On a surface with no Stop hook (Cowork, claude.ai), an empty journal is the expected default for this phase, not an exception to apologise for: state plainly that the timeline is built from the session's own tool-call record instead, per the rule above. Treat that gap itself as a `friction` finding only when natural decision points existed and no manual `LOG`-mode line was written to capture any of them, since the remedy for that failure is the habit, not this phase's tolerance for a silent record.
 
 **R2 Decision review.** Table every `decision` entry: decision | information available then | expected | actual | verdict (good-call, bad-call, good-call-bad-luck, bad-call-good-luck, unresolved). Compute the calibration rate: fraction of resolved decisions where actual matched expected. Report it even when the sample is small, labelled as such.
 
@@ -106,7 +106,7 @@ Budget governs phases R1 to R4. Document write, action-file writes, and journal 
 
 **R5 Actions.** Derive actions from insights. Caps: 3 new actions at T1/T2, 6 at T3, because follow-through beats coverage. Every action has one owner, one horizon, one due date, one target. Horizons: S ≤ 2 weeks, M ≤ 3 months, L beyond. Actions exist to test a change and learn from it; write the success signal into the action line where one exists. Append to `actions.jsonl`.
 
-**R6 Meta-changes.** Actions whose target is a skill, CLAUDE.md, or another config file become proposed diffs: exact old and new lines, presented for approval, never auto-applied. This respects the standing rule that global md files are updated last, after review.
+**R6 Meta-changes.** Actions whose target is a skill, CLAUDE.md, or another config file become proposed diffs: exact old and new lines, presented for approval, never auto-applied. A file that shapes every future session changes only after a human has read the exact diff.
 
 **R7 Close and gate.** Write the document per `references/formats.md` to `<notes-root>/retros/` (Destinations rule 3; a copy under `.claude/retro-log/retros/` only if byte-identical), then append one journal line, or stage it per Destinations rule 2 and say which: `{"type":"event","txt":"retro-marker <retro filename>"}` (schema fields as above, `src` per writer). This marker sets the period boundary for the next run's tiering and R1 scope. Verify: R0 covered every open prior action; every finding has an anchor; action count within cap; every decision entry appeared in R2. Fix failures before finishing. End the document with a ROTI self-score (1-5, one-line justification) and one line naming the weakest part of this retro.
 
