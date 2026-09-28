@@ -12,9 +12,11 @@ Network access happens only when asked: `headroom` reads a local Headroom proxy'
 and `check` reads LiteLLM's community price map to flag drift. Neither writes rates.json;
 a price change is applied by hand from the first-party page, then re-dated.
 
-Subcommands: cost, breakeven, compare, estimate, verify, render, cpd, headroom, pairs, check.
-Python 3.10+, standard library only, so it runs on 3.10, 3.12 and 3.13 alike.
-Version 2.3 (2026-09-28).
+Subcommands: cost, breakeven, compare, estimate, verify, render, cpd, headroom, pairs, check,
+plan, ship, realise, score. The last four are the savings scoreboard: a saving is predicted
+before a change ships and scored after it, with evidence classes kept apart (metering.md).
+Standard library only, tested on Python 3.14.
+Version 2.5 (2026-09-28).
 """
 
 from __future__ import annotations
@@ -26,8 +28,9 @@ import sys
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from statistics import median
 
 HERE = Path(__file__).resolve().parent
 RATES_PATH = HERE / "rates.json"
@@ -269,7 +272,7 @@ def log_record(rates: Rates, record: dict, path: Path | None = None) -> dict:
     path = path or LOG_PATH
     record = dict(record)
     record.update(
-        ts=datetime.now().astimezone().isoformat(timespec="seconds"),
+        ts=record.get("ts") or datetime.now().astimezone().isoformat(timespec="seconds"),
         rates_verified=rates.verified,
         rates_expires=rates.expires,
         excluded_modifiers=rates.excluded_modifiers(),
@@ -457,7 +460,20 @@ def headroom_cache_records(stats: dict, rates: Rates, site: str, last: dict | No
                     "calls": 0, "usd": round(usd, 6)})
     if out:
         out[-1]["cache_snapshot"] = snap
+        out[-1]["requests_delta"] = requests_delta(snap, last)
     return out, snap
+
+
+def requests_delta(snap: dict, last: dict | None) -> float:
+    """Requests since the previous snapshot, or the whole count after a proxy restart.
+
+    Computed once per run and stored on the one record that carries the snapshot, so a
+    run with two models is counted once and a snapshot-only run still contributes.
+    """
+    if not last:
+        return snap["requests_total"]
+    prev = _n(last.get("requests_total"))
+    return snap["requests_total"] if snap["requests_total"] < prev else snap["requests_total"] - prev
 
 
 def last_cache_snapshot(records: list[dict]) -> dict | None:
@@ -487,8 +503,8 @@ def pair_errors(records: list[dict]) -> dict:
     pairs: list[dict] = []
     for r in records:
         site = r.get("site")
-        if not site or r.get("usd") is None:
-            continue
+        if not site or r.get("usd") is None or r.get("kind") in SCOREBOARD_KINDS:
+            continue  # a plan, shipped, realised or snapshot record never opens or feeds a pair
         if is_measured(r):
             if site in open_est:
                 open_est[site]["actual"] += float(r["usd"])
@@ -512,6 +528,514 @@ def pair_errors(records: list[dict]) -> dict:
         "small_sample": len(errs) < 5,
         "rows": rows,
     }
+
+
+# --- v2.5: savings scoreboard (plan, ship, realise, score) ----------------------
+
+LEVERS = ("BATCH", "REPLACE", "DOWNGRADE", "CACHE", "TRIM", "PROXY")
+METHODS_BY_LEVER = {
+    "BATCH": ("before-after", "manual"),
+    "DOWNGRADE": ("before-after", "manual"),
+    "TRIM": ("before-after", "manual"),
+    "CACHE": ("before-after", "headroom-cache", "manual"),
+    "PROXY": ("headroom-proxy", "manual"),
+    "REPLACE": ("manual",),
+}
+EVIDENCE_BY_METHOD = {"before-after": "measured", "headroom-proxy": "modelled-baseline",
+                      "headroom-cache": "modelled-baseline"}
+EVIDENCE_CLASSES = ("measured", "modelled-baseline", "estimate")  # never summed together (P3)
+BILLING = ("metered", "subscription", "unknown")
+UNITS = ("call", "day")
+WINDOW_DAYS = 14
+DEFAULT_MIN_N = 20
+SCOREBOARD_KINDS = {"plan", "shipped", "realised", "snapshot"}  # none of these is an actual
+
+
+class Refusal(ValueError):
+    """A scoreboard command declined to write; the log is exactly as it was."""
+
+
+def parse_ts(value) -> datetime | None:
+    """ISO 8601 to an aware datetime: a trailing Z becomes +00:00, a naive value is UTC.
+
+    Raw strings are never compared. Anything that does not parse returns None so the
+    caller can skip the record and count it.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return None
+    s = value.strip()
+    if s[-1] in "Zz":
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def record_time(rec: dict) -> datetime | None:
+    """request_ts when present (the provider's clock), otherwise ts (the logging clock)."""
+    if rec.get("request_ts"):
+        return parse_ts(rec["request_ts"])
+    return parse_ts(rec.get("ts"))
+
+
+def _now() -> datetime:
+    return datetime.now().astimezone()
+
+
+def _iso(dt: datetime) -> str:
+    return dt.isoformat(timespec="seconds")
+
+
+def new_id(records: list[dict], prefix: str, today: date) -> str:
+    """S-<yyyymmdd>-<n> for plans, R-<yyyymmdd>-<n> for realised records; n counts up per day."""
+    stem = f"{prefix}-{today.strftime('%Y%m%d')}-"
+    used = set()
+    for r in records:
+        rid = r.get("id")
+        if isinstance(rid, str) and rid.startswith(stem):
+            try:
+                used.add(int(rid[len(stem):]))
+            except ValueError:
+                pass
+    return f"{stem}{max(used) + 1 if used else 1}"
+
+
+def _plans(records: list[dict]) -> dict[str, dict]:
+    return {r["id"]: r for r in records if r.get("kind") == "plan" and r.get("id")}
+
+
+def _shipped_for(records: list[dict], plan_id: str) -> dict | None:
+    return next((r for r in records if r.get("kind") == "shipped" and r.get("plan_id") == plan_id), None)
+
+
+def _realised_for(records: list[dict], plan_id: str) -> list[dict]:
+    return [r for r in records if r.get("kind") == "realised" and r.get("plan_id") == plan_id]
+
+
+def plan_record(records: list[dict], rates: Rates, *, site: str, lever: str, method: str,
+                predicted_usd: float | None = None, unit: str | None = None, predicted_basis: str = "",
+                baseline_model: str | None = None, after_model: str | None = None,
+                agreement: float | None = None, agreement_n: int | None = None,
+                billing: str = "unknown", post_hoc: bool = False, today: date | None = None) -> dict:
+    """The prediction, written before the change ships (P2). Carries no usd field."""
+    if not (site or "").strip():
+        raise Refusal("site must be the label the actuals are logged under; a blank site would match every record")
+    if lever not in LEVERS:
+        raise Refusal(f"lever must be one of {', '.join(LEVERS)}, got {lever!r}")
+    allowed = METHODS_BY_LEVER[lever]
+    if method not in allowed:
+        raise Refusal(f"method {method!r} is not listed for lever {lever}; allowed: {', '.join(allowed)}")
+    if billing not in BILLING:
+        raise Refusal(f"billing must be one of {', '.join(BILLING)}, got {billing!r}")
+    if post_hoc:
+        if predicted_usd is not None or unit is not None:
+            raise Refusal("a post_hoc plan takes no predicted_usd or unit: a prediction written after the fact is not one")
+    else:
+        if predicted_usd is None or unit is None:
+            raise Refusal("predicted_usd and unit are required unless --post-hoc")
+        if unit not in UNITS:
+            raise Refusal(f"unit must be one of {', '.join(UNITS)}, got {unit!r}")
+        if not predicted_usd > 0:
+            raise Refusal(f"predicted_usd must be positive, got {predicted_usd}")
+    if lever == "DOWNGRADE":
+        if not (baseline_model and after_model):
+            raise Refusal("DOWNGRADE needs --baseline-model and --after-model")
+        rates.rate(baseline_model)
+        rates.rate(after_model)
+    if (agreement is None) != (agreement_n is None):
+        raise Refusal("--agreement and --agreement-n go together")
+    rec = {"kind": "plan", "id": new_id(records, "S", today or date.today()), "site": site, "lever": lever,
+           "method": method, "predicted_basis": predicted_basis, "billing": billing, "post_hoc": bool(post_hoc)}
+    if not post_hoc:
+        rec["predicted_usd"] = float(predicted_usd)
+        rec["unit"] = unit
+    if baseline_model:
+        rec["baseline_model"] = baseline_model
+    if after_model:
+        rec["after_model"] = after_model
+    if agreement is not None:
+        rec["agreement"] = float(agreement)
+        rec["agreement_n"] = int(agreement_n)
+    return rec
+
+
+def shipped_record(records: list[dict], plan_id: str, at: str | None = None, now: datetime | None = None) -> dict:
+    """The moment the change went live. live_from is ts unless --at names an earlier real date."""
+    plan = _plans(records).get(plan_id)
+    if plan is None:
+        raise Refusal(f"plan {plan_id} not found in the log")
+    if _shipped_for(records, plan_id) is not None:
+        raise Refusal(f"plan {plan_id} already has a shipped record; the log is append-only (P1)")
+    now = now or _now()
+    live_from = now
+    if at is not None:
+        at_dt = parse_ts(at)
+        if at_dt is None:
+            raise Refusal(f"--at {at!r} is not an ISO 8601 time")
+        plan_ts = parse_ts(plan.get("ts"))
+        if plan_ts is not None and at_dt < plan_ts and not plan.get("post_hoc"):
+            raise Refusal(f"--at {at} is earlier than plan.ts {plan['ts']}; only a post_hoc plan ships before it was planned")
+        if at_dt > now:
+            raise Refusal(f"--at {at} is in the future")
+        live_from = at_dt
+    return {"kind": "shipped", "plan_id": plan_id, "ts": _iso(now), "live_from": live_from.isoformat()}
+
+
+def _site_matches(record_site: str | None, site: str) -> bool:
+    """Exact label, or a session label under it (`claude-code:2026-09-28-say-hi` under `claude-code`)."""
+    rs = record_site or ""
+    return rs == site or rs.startswith(site + ":")
+
+
+def _window_records(records: list[dict], site: str, start: datetime, end: datetime) -> tuple[list[dict], int]:
+    """Non-scoreboard records under the site with a parseable time in [start, end), and the unparseable count."""
+    out, skipped = [], 0
+    for r in records:
+        if r.get("kind") in ("plan", "shipped", "realised") or not _site_matches(r.get("site"), site):
+            continue
+        t = record_time(r)
+        if t is None:
+            skipped += 1
+            continue
+        if start <= t < end:
+            out.append(r)
+    return out, skipped
+
+
+def _reprice(rates: Rates, r: dict, model: str | None = None) -> float:
+    """cost() under the current table, with cost()'s own defaults for fields a record lacks (P7)."""
+    return cost(rates, model or r.get("model", ""), _n(r.get("in_tokens")), _n(r.get("out_tokens")),
+                calls=int(_n(r.get("calls"))), batch=bool(r.get("batch", False)),
+                cache_read_tokens=_n(r.get("cache_read")), cache_write_tokens=_n(r.get("cache_write")),
+                cache_ttl=r.get("ttl") or "5m", region=r.get("region") or "global",
+                tool_choice=r.get("tool_choice") or None)
+
+
+def _is_cache_record(r: dict) -> bool:
+    return is_measured(r) and _n(r.get("calls")) == 0 and any(k in r for k in ("cache_write_5m", "cache_write_1h", "cache_read"))
+
+
+def _cache_spend(rates: Rates, r: dict) -> float:
+    m = r.get("model", "")
+    return (cost(rates, m, 0, 0, cache_write_tokens=_n(r.get("cache_write_5m")), cache_ttl="5m")
+            + cost(rates, m, 0, 0, cache_write_tokens=_n(r.get("cache_write_1h")), cache_ttl="1h")
+            + cost(rates, m, 0, 0, cache_read_tokens=_n(r.get("cache_read"))))
+
+
+def _cache_net_saving(rates: Rates, r: dict) -> float:
+    """Read savings against write premiums, per record; negative when the writes were not paid back."""
+    m = r.get("model", "")
+    rate_in, _ = rates.rate(m)
+    mult = rates.multipliers
+    return rate_in * (_n(r.get("cache_read")) * (1 - rates.cache_read_mult(m))
+                      - _n(r.get("cache_write_5m")) * (float(mult["cache_write_5m"]) - 1)
+                      - _n(r.get("cache_write_1h")) * (float(mult["cache_write_1h"]) - 1))
+
+
+def _requests_in(recs: list[dict]) -> float:
+    return sum(_n(r.get("requests_delta")) for r in recs if "requests_delta" in r)
+
+
+def _side(rates: Rates, recs: list[dict], model: str | None = None) -> dict:
+    """Priced actuals with calls > 0 on one side of a before-after comparison."""
+    priced = [r for r in recs if is_measured(r) and _n(r.get("calls")) > 0]
+    total = calls = tokens = 0.0
+    per_call = []
+    for r in priced:
+        try:
+            c = _reprice(rates, r, model)
+        except (UnknownModel, ValueError) as exc:
+            raise Refusal(f"cannot reprice a record under {r.get('site')!r} at {r.get('ts')}: {exc}") from None
+        n = _n(r.get("calls"))
+        total += c
+        calls += n
+        tokens += _n(r.get("in_tokens")) * n
+        per_call.append(c / n)
+    return {"n": len(priced), "calls": calls, "per_call": (total / calls) if calls else None,
+            "median_per_call": median(per_call) if per_call else None,
+            "tokens_per_call": (tokens / calls) if calls else None}
+
+
+def _per_unit(plan: dict, realised_usd: float, units_after: float | None, days: float) -> float | None:
+    unit = plan.get("unit")
+    if plan.get("post_hoc") or unit is None:
+        return None
+    if unit == "call":
+        return realised_usd / units_after if units_after else None
+    return realised_usd / days if days else None
+
+
+def _days(start: datetime, end: datetime) -> float:
+    return round((end - start).total_seconds() / 86400, 3)
+
+
+def _realise_manual(plan: dict, live_from: datetime, until: datetime, realised_usd, basis, calls_replaced, evidence) -> dict:
+    if realised_usd is None or not basis:
+        raise Refusal("manual realise needs --realised-usd and --basis")
+    default = "modelled-baseline" if calls_replaced is not None else "estimate"
+    if evidence is not None:
+        if evidence == "measured":
+            raise Refusal("manual evidence is never measured: measured means priced actuals on both sides of the change")
+        if evidence not in EVIDENCE_CLASSES:
+            raise Refusal(f"evidence must be one of {', '.join(EVIDENCE_CLASSES)}, got {evidence!r}")
+        if EVIDENCE_CLASSES.index(evidence) < EVIDENCE_CLASSES.index(default):
+            raise Refusal(f"--evidence {evidence} would raise the class above {default}; it may only lower it")
+    if plan.get("unit") == "call" and calls_replaced is None:
+        raise Refusal("manual realise with unit 'call' needs --calls-replaced, counted from the application's own logs")
+    days = _days(live_from, until)
+    body = {"realised_usd": float(realised_usd),
+            "realised_per_unit": _per_unit(plan, float(realised_usd), calls_replaced, days),
+            "realised_basis": basis, "evidence": evidence or default,
+            "window_start": _iso(live_from), "window_end": _iso(until), "days": days,
+            "n_before": 0, "n_after": int(calls_replaced) if calls_replaced is not None else 0,
+            "tokens_per_call_before": None, "tokens_per_call_after": None, "skipped_times": 0}
+    if calls_replaced is not None:
+        body["calls_replaced"] = int(calls_replaced)
+    return body
+
+
+def _realise_before_after(records, rates, plan, live_from, until, min_n) -> dict:
+    window = timedelta(days=WINDOW_DAYS)
+    end = min(live_from + window, until)
+    before, skipped = _window_records(records, plan["site"], live_from - window, live_from)
+    after, _ = _window_records(records, plan["site"], live_from, end)
+    b = _side(rates, before, plan.get("baseline_model") if plan["lever"] == "DOWNGRADE" else None)
+    a = _side(rates, after)
+    for name, side in (("before", b), ("after", a)):
+        if side["n"] < min_n:
+            raise Refusal(f"{name} window holds {side['n']} record(s) with calls > 0, fewer than --min-n {min_n}")
+    realised = (b["per_call"] - a["per_call"]) * a["calls"]
+    days = _days(live_from, end)
+    return {"realised_usd": round(realised, 6), "realised_per_unit": _per_unit(plan, realised, a["calls"], days),
+            "evidence": "measured", "window_start": _iso(live_from - window), "window_end": _iso(end), "days": days,
+            "n_before": b["n"], "n_after": a["n"], "calls_before": b["calls"], "calls_after": a["calls"],
+            "per_call_before": b["per_call"], "per_call_after": a["per_call"],
+            "median_per_call_before": b["median_per_call"], "median_per_call_after": a["median_per_call"],
+            "tokens_per_call_before": b["tokens_per_call"], "tokens_per_call_after": a["tokens_per_call"],
+            "skipped_times": skipped}
+
+
+def _cache_per_request(rates: Rates, recs: list[dict], fn) -> tuple[float | None, float, int]:
+    cache = [r for r in recs if _is_cache_record(r)]
+    req = _requests_in(recs)
+    amount = sum(fn(rates, r) for r in cache)
+    return ((amount / req) if req else None), req, len(cache)
+
+
+def _realise_headroom_proxy(records, rates, plan, live_from, until) -> dict:
+    window = timedelta(days=WINDOW_DAYS)
+    after, skipped = _window_records(records, plan["site"], live_from, until)  # no cap: rescored to date
+    before, _ = _window_records(records, plan["site"], live_from - window, live_from)
+    reqs = [r for r in after if is_measured(r) and r.get("in_tokens_original") is not None and _n(r.get("calls")) > 0]
+    saving = 0.0
+    for r in reqs:
+        try:
+            saving += (cost(rates, r.get("model", ""), _n(r.get("in_tokens_original")), _n(r.get("out_tokens")))
+                       - cost(rates, r.get("model", ""), _n(r.get("in_tokens")), _n(r.get("out_tokens"))))
+        except (UnknownModel, ValueError) as exc:
+            raise Refusal(f"cannot reprice request {r.get('request_id')}: {exc}") from None
+    cb, _, nb = _cache_per_request(rates, before, _cache_spend)
+    ca, _, na = _cache_per_request(rates, after, _cache_spend)
+    flags = []
+    if nb == 0:
+        flags.append("NO BEFORE DATA")
+    elif (nb and cb is None) or (na and ca is None):
+        flags.append("NO REQUEST COUNT")  # cache records from before v2.5 carry no requests_delta
+    elif ca is not None and cb is not None and ca > cb:
+        flags.append("CACHE COST ROSE")
+    days = _days(live_from, until)
+    try:
+        b = _side(rates, before)  # context only: the proxy saving uses no before side
+    except Refusal:
+        b = {"n": 0, "tokens_per_call": None}
+    return {"realised_usd": round(saving, 6), "realised_per_unit": _per_unit(plan, saving, len(reqs), days),
+            "evidence": "modelled-baseline", "window_start": _iso(live_from), "window_end": _iso(until), "days": days,
+            "n_before": b["n"], "n_after": len(reqs),
+            "tokens_per_call_before": b["tokens_per_call"],
+            "tokens_per_call_after": (sum(_n(r.get("in_tokens")) for r in reqs) / len(reqs)) if reqs else None,
+            "tokens_saved": sum(_n(r.get("in_tokens_original")) - _n(r.get("in_tokens")) for r in reqs),
+            "cache_per_request_before": cb, "cache_per_request_after": ca,
+            "cache_records_before": nb, "cache_records_after": na, "flags": flags, "skipped_times": skipped}
+
+
+def _realise_headroom_cache(records, rates, plan, live_from, until, min_n) -> dict:
+    window = timedelta(days=WINDOW_DAYS)
+    end = min(live_from + window, until)
+    before, skipped = _window_records(records, plan["site"], live_from - window, live_from)
+    after, _ = _window_records(records, plan["site"], live_from, end)
+    try:
+        pb, req_b, nb = _cache_per_request(rates, before, _cache_net_saving)
+        pa, req_a, na = _cache_per_request(rates, after, _cache_net_saving)
+    except (UnknownModel, ValueError) as exc:
+        raise Refusal(f"cannot price a cache record: {exc}") from None
+    for name, req in (("before", req_b), ("after", req_a)):
+        if req < min_n:
+            raise Refusal(f"{name} window holds {req:.0f} request(s) (sum of requests_delta), fewer than --min-n {min_n}")
+    realised = (pa - pb) * req_a
+    days = _days(live_from, end)
+    return {"realised_usd": round(realised, 8), "realised_per_unit": _per_unit(plan, realised, req_a, days),
+            "evidence": "modelled-baseline", "window_start": _iso(live_from - window), "window_end": _iso(end),
+            "days": days, "n_before": int(req_b), "n_after": int(req_a),
+            "net_per_request_before": pb, "net_per_request_after": pa,
+            "cache_records_before": nb, "cache_records_after": na,
+            "tokens_per_call_before": None, "tokens_per_call_after": None, "skipped_times": skipped}
+
+
+def realise_record(records: list[dict], rates: Rates, plan_id: str, *, auto: bool = False, until: str | None = None,
+                   min_n: int = DEFAULT_MIN_N, supersede: str | None = None, lesson: str | None = None,
+                   realised_usd: float | None = None, basis: str | None = None, calls_replaced: int | None = None,
+                   evidence: str | None = None, now: datetime | None = None) -> dict:
+    """Score a shipped plan over its window. A second scoring names the first with `supersedes`."""
+    now = now or _now()
+    plan = _plans(records).get(plan_id)
+    if plan is None:
+        raise Refusal(f"plan {plan_id} not found in the log")
+    shipped = _shipped_for(records, plan_id)
+    if shipped is None:
+        raise Refusal(f"plan {plan_id} has no shipped record; run ship first")
+    plan_ts, ship_ts = parse_ts(plan.get("ts")), parse_ts(shipped.get("ts"))
+    if plan_ts and ship_ts and plan_ts > ship_ts:
+        raise Refusal(f"plan.ts {plan['ts']} is later than shipped.ts {shipped['ts']} (P2): "
+                      f"the prediction was not written before the change shipped")
+    earlier = _realised_for(records, plan_id)
+    newest = earlier[-1].get("id") if earlier else None
+    if earlier and supersede is None:
+        raise Refusal(f"plan {plan_id} already has realised record {newest}; pass --supersede {newest} to rescore")
+    if supersede is not None and supersede != newest:
+        raise Refusal(f"--supersede {supersede} is not the newest realised record for plan {plan_id} "
+                      f"({newest or 'none exists'})")
+    live_from = parse_ts(shipped.get("live_from")) or ship_ts
+    if live_from is None:
+        raise Refusal(f"shipped record for {plan_id} has no parseable live_from")
+    until_dt = parse_ts(until) if until else now
+    if until_dt is None:
+        raise Refusal(f"--until {until!r} is not an ISO 8601 time")
+    if until_dt <= live_from:
+        raise Refusal(f"--until {until_dt.isoformat()} is not after live_from {live_from.isoformat()}")
+    method = plan.get("method")
+    if method == "manual":
+        if auto:
+            raise Refusal("a manual plan is realised with --realised-usd and --basis, not --auto")
+        body = _realise_manual(plan, live_from, until_dt, realised_usd, basis, calls_replaced, evidence)
+    elif not auto:
+        raise Refusal(f"method {method!r} is realised with --auto")
+    elif method == "before-after":
+        body = _realise_before_after(records, rates, plan, live_from, until_dt, min_n)
+    elif method == "headroom-proxy":
+        body = _realise_headroom_proxy(records, rates, plan, live_from, until_dt)
+    elif method == "headroom-cache":
+        body = _realise_headroom_cache(records, rates, plan, live_from, until_dt, min_n)
+    else:
+        raise Refusal(f"plan {plan_id} has an unknown method {method!r}")
+    rec = {"kind": "realised", "id": new_id(records, "R", now.date()), "plan_id": plan_id, "method": method,
+           "ts": _iso(now)}
+    rec.update(body)
+    if supersede:
+        rec["supersedes"] = supersede
+    if lesson:
+        rec["lesson"] = lesson
+    return rec
+
+
+def score_report(records: list[dict], *, since: str | None = None, site: str | None = None,
+                 lever: str | None = None) -> dict:
+    """The scoreboard as data. Only the newest realised record per plan counts."""
+    plans = _plans(records)
+    shipped_ids = {r.get("plan_id") for r in records if r.get("kind") == "shipped"}
+    newest: dict[str, dict] = {}
+    superseded: list[str] = []
+    for r in records:
+        if r.get("kind") != "realised":
+            continue
+        pid = r.get("plan_id")
+        if pid in newest:
+            superseded.append(newest[pid].get("id"))
+        newest[pid] = r
+    since_dt = parse_ts(since) if since else None
+    if since and since_dt is None:
+        raise Refusal(f"--since {since!r} is not a date")
+    rows = []
+    for pid, r in newest.items():
+        p = plans.get(pid)
+        if p is None:
+            continue
+        if site and not _site_matches(p.get("site"), site):
+            continue
+        if lever and p.get("lever") != lever:
+            continue
+        if since_dt and (parse_ts(r.get("ts")) or since_dt) < since_dt:
+            continue
+        rows.append((p, r))
+
+    by: dict[tuple, dict] = {}
+    for p, r in rows:
+        key = (p["lever"], p.get("billing", "unknown"))
+        cell = by.setdefault(key, {"lever": key[0], "billing": key[1], "list_price": key[1] != "metered",
+                                   **{e: {"usd": 0.0, "n": 0} for e in EVIDENCE_CLASSES}})
+        ev = r.get("evidence") if r.get("evidence") in EVIDENCE_CLASSES else "estimate"
+        cell[ev]["usd"] = round(cell[ev]["usd"] + float(r.get("realised_usd") or 0.0), 6)
+        cell[ev]["n"] += 1
+
+    groups: dict[tuple, list] = {}
+    for p, r in rows:
+        ev, rpu, pred = r.get("evidence"), r.get("realised_per_unit"), p.get("predicted_usd")
+        if p.get("post_hoc") or ev not in ("measured", "modelled-baseline") or rpu is None or not pred:
+            continue
+        groups.setdefault((p["lever"], ev), []).append((float(rpu), float(pred)))
+    accuracy = []
+    for (lv, ev), pairs in groups.items():
+        ratios = [a / b for a, b in pairs]
+        apes = [abs(a - b) / b * 100 for a, b in pairs]
+        accuracy.append({"lever": lv, "evidence": ev, "n": len(pairs), "median_ratio": round(median(ratios), 3),
+                         "mape_pct": round(sum(apes) / len(apes), 1), "small_sample": len(pairs) < 5})
+
+    zero = [{"plan_id": p["id"], "lever": p["lever"], "site": p.get("site"), "realised_usd": r.get("realised_usd"),
+             "lesson": r.get("lesson")} for p, r in rows if float(r.get("realised_usd") or 0.0) <= 0]
+    unaudited = [{"plan_id": p["id"], "site": p.get("site"), "realised_usd": r.get("realised_usd")}
+                 for p, r in rows if p["lever"] == "REPLACE" and p.get("agreement") is None]
+    lessons = sorted(({"ts": r.get("ts"), "plan_id": p["id"], "lever": p["lever"], "lesson": r["lesson"]}
+                      for p, r in rows if r.get("lesson")), key=lambda x: x["ts"] or "", reverse=True)[:10]
+    skipped = sum(1 for r in records if r.get("kind") not in ("plan", "shipped", "realised") and record_time(r) is None)
+    header = {"plans": len(plans),
+              "billing_mix": {b: sum(1 for p in plans.values() if p.get("billing", "unknown") == b) for b in BILLING},
+              "unshipped": [pid for pid in plans if pid not in shipped_ids],
+              "unrealised": [pid for pid in plans if pid in shipped_ids and pid not in newest],
+              "skipped_times": skipped}
+    return {"header": header, "by_lever": list(by.values()), "accuracy": accuracy, "zero_or_negative": zero,
+            "unaudited_replace": unaudited, "lessons": lessons, "superseded": superseded}
+
+
+def format_score(res: dict, log_path: Path, rates_verified: str) -> str:
+    h = res["header"]
+    mix = ", ".join(f"{k} {v}" for k, v in h["billing_mix"].items())
+    lines = [f"token-aware score | log {log_path} | rates verified {rates_verified} | plans {h['plans']} ({mix})",
+             f"not yet shipped: {', '.join(h['unshipped']) or 'none'} | shipped, not yet realised: "
+             f"{', '.join(h['unrealised']) or 'none'} | records skipped for an unparseable time: {h['skipped_times']}"]
+    if res["superseded"]:
+        lines.append("superseded realised records: " + ", ".join(str(s) for s in res["superseded"]))
+    lines += ["", "savings by lever and billing, USD (n); evidence classes are never summed across columns",
+              f"  {'lever':<10}{'billing':<14}{'':<12}{'measured':<20}{'modelled-baseline':<20}{'estimate':<20}"]
+    for row in res["by_lever"]:
+        cells = [f"{row[e]['usd']:.6f} ({row[e]['n']})" if row[e]["n"] else "-" for e in EVIDENCE_CLASSES]
+        tag = "list-price" if row["list_price"] else ""
+        lines.append(f"  {row['lever']:<10}{row['billing']:<14}{tag:<12}" + "".join(f"{c:<20}" for c in cells))
+    lines += ["", "prediction accuracy per unit (median realised/predicted, MAPE); post_hoc plans excluded"]
+    for a in res["accuracy"] or []:
+        flag = "  small sample" if a["small_sample"] else ""
+        lines.append(f"  {a['lever']:<10}{a['evidence']:<20}n={a['n']:<4}median {a['median_ratio']:.3f}  "
+                     f"MAPE {a['mape_pct']:.1f}%{flag}")
+    if not res["accuracy"]:
+        lines.append("  none yet")
+    lines += ["", "zero-or-negative savings"]
+    lines += [f"  {z['plan_id']}  {z['lever']}  {z['site']}  {z['realised_usd']}  {z['lesson'] or ''}".rstrip()
+              for z in res["zero_or_negative"]] or ["  none"]
+    lines += ["", "REPLACE with no agreement rate: unaudited"]
+    lines += [f"  {u['plan_id']}  {u['site']}  {u['realised_usd']}" for u in res["unaudited_replace"]] or ["  none"]
+    lines += ["", "lessons, newest first"]
+    lines += [f"  {(l['ts'] or '')[:10]}  {l['plan_id']}  {l['lesson']}" for l in res["lessons"]] or ["  none"]
+    return "\n".join(lines)
 
 
 # --- drift check against a secondary price source ------------------------------
@@ -609,6 +1133,45 @@ def main(argv: list[str] | None = None) -> int:
     k.add_argument("--url", default=LITELLM_PRICES_URL)
     k.add_argument("--file", default=None, help="a saved copy of the price map instead of the live URL")
 
+    pl = sub.add_parser("plan", help="record a predicted saving before the change ships")
+    pl.add_argument("--site", required=True, help="the call-site label its actuals are logged under")
+    pl.add_argument("--lever", required=True, choices=LEVERS)
+    pl.add_argument("--method", required=True, help="before-after, headroom-proxy, headroom-cache or manual")
+    pl.add_argument("--predicted-usd", dest="predicted_usd", type=float, default=None)
+    pl.add_argument("--unit", default=None, choices=UNITS)
+    pl.add_argument("--basis", dest="predicted_basis", default="", help="one line on where the prediction came from")
+    pl.add_argument("--baseline-model", dest="baseline_model", default=None)
+    pl.add_argument("--after-model", dest="after_model", default=None)
+    pl.add_argument("--agreement", type=float, default=None, help="REPLACE agreement rate, 0 to 1")
+    pl.add_argument("--agreement-n", dest="agreement_n", type=int, default=None)
+    pl.add_argument("--billing", default="unknown", choices=BILLING)
+    pl.add_argument("--post-hoc", dest="post_hoc", action="store_true",
+                    help="the change was live before this plan; scored but outside prediction accuracy")
+
+    sh = sub.add_parser("ship", help="record that a planned change went live")
+    sh.add_argument("--id", dest="plan_id", required=True)
+    sh.add_argument("--at", default=None, help="ISO time of the real go-live when earlier than now")
+
+    rl = sub.add_parser("realise", help="score a shipped plan over its window")
+    rl.add_argument("--id", dest="plan_id", required=True)
+    rl.add_argument("--auto", action="store_true", help="compute from the log (before-after, headroom-*)")
+    rl.add_argument("--until", default=None, help="ISO end of the after window; default now")
+    rl.add_argument("--min-n", dest="min_n", type=int, default=DEFAULT_MIN_N)
+    rl.add_argument("--supersede", default=None, help="id of the realised record this one replaces")
+    rl.add_argument("--lesson", default=None, help="one line, searchable with kb-search")
+    rl.add_argument("--realised-usd", dest="realised_usd", type=float, default=None, help="manual: the figure")
+    rl.add_argument("--basis", dest="realised_basis", default=None, help="manual: where the figure came from")
+    rl.add_argument("--calls-replaced", dest="calls_replaced", type=int, default=None,
+                    help="manual: calls replaced, from the application's own logs")
+    rl.add_argument("--evidence", default=None, choices=EVIDENCE_CLASSES, help="manual: may only lower the class")
+
+    sc = sub.add_parser("score", help="savings by lever, prediction accuracy, lessons")
+    sc.add_argument("--since", default=None, help="YYYY-MM-DD; realised records from this date")
+    sc.add_argument("--site", default=None)
+    sc.add_argument("--lever", default=None, choices=LEVERS)
+    sc.add_argument("--json", dest="as_json", action="store_true")
+    sc.add_argument("--out", default=None, help="write UTF-8 without a BOM (a PowerShell 5.1 > redirect writes UTF-16)")
+
     a = ap.parse_args(argv)
 
     if a.cmd == "cpd":
@@ -632,7 +1195,63 @@ def main(argv: list[str] | None = None) -> int:
               f"tokenizer factor {NEWER_TOKENIZER_FACTOR})")
         return 0
 
-    rates = load_rates()
+    if a.cmd == "score":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            pass
+        try:
+            res = score_report(_read_jsonl(LOG_PATH) if LOG_PATH.exists() else [],
+                               since=a.since, site=a.site, lever=a.lever)
+        except Refusal as exc:
+            print(f"refused: {exc}", file=sys.stderr)
+            return 2
+        verified = json.loads(RATES_PATH.read_text(encoding="utf-8")).get("verified", "?") if RATES_PATH.exists() else "?"
+        text = json.dumps(res, ensure_ascii=False, indent=1) if a.as_json else format_score(res, LOG_PATH, verified)
+        if a.out:
+            Path(a.out).write_text(text + "\n", encoding="utf-8")
+            print(f"wrote {a.out}")
+        else:
+            print(text)
+        return 0
+
+    try:
+        rates = load_rates()
+    except RatesExpired as exc:
+        print(f"refused: {exc}", file=sys.stderr)
+        return 2
+
+    if a.cmd in ("plan", "ship", "realise"):
+        records = _read_jsonl(LOG_PATH) if LOG_PATH.exists() else []
+        try:
+            if a.cmd == "plan":
+                rec = plan_record(records, rates, site=a.site, lever=a.lever, method=a.method,
+                                  predicted_usd=a.predicted_usd, unit=a.unit, predicted_basis=a.predicted_basis,
+                                  baseline_model=a.baseline_model, after_model=a.after_model,
+                                  agreement=a.agreement, agreement_n=a.agreement_n, billing=a.billing,
+                                  post_hoc=a.post_hoc)
+            elif a.cmd == "ship":
+                rec = shipped_record(records, a.plan_id, at=a.at)
+            else:
+                rec = realise_record(records, rates, a.plan_id, auto=a.auto, until=a.until, min_n=a.min_n,
+                                     supersede=a.supersede, lesson=a.lesson, realised_usd=a.realised_usd,
+                                     basis=a.realised_basis, calls_replaced=a.calls_replaced, evidence=a.evidence)
+        except (Refusal, UnknownModel) as exc:
+            print(f"refused: {exc}", file=sys.stderr)
+            return 2
+        rec = log_record(rates, rec)
+        if a.cmd == "realise":
+            flags = " ".join(rec.get("flags") or [])
+            print(f"{rec['id']} {rec['plan_id']} {rec['method']} {rec['evidence']}: realised {rec['realised_usd']} USD"
+                  f" over {rec['days']} day(s), n_before {rec['n_before']}, n_after {rec['n_after']},"
+                  f" per unit {rec['realised_per_unit']}; {rec.get('skipped_times', 0)} record(s) skipped for an"
+                  f" unparseable time" + (f"; {flags}" if flags else ""))
+            if rec.get("cache_per_request_before") is not None or rec.get("cache_per_request_after") is not None:
+                print(f"cache spend per request: before {rec.get('cache_per_request_before')}, "
+                      f"after {rec.get('cache_per_request_after')}")
+        else:
+            print(json.dumps(rec, ensure_ascii=False))
+        return 0
 
     if a.cmd == "estimate":
         text = Path(a.path).read_text(encoding="utf-8")
@@ -713,7 +1332,7 @@ def main(argv: list[str] | None = None) -> int:
                 log_record(rates, r)
             if not cache_recs:  # keep the snapshot current even when nothing new was cached
                 log_record(rates, {"site": a.site, "kind": "snapshot", "method": "headroom /stats (snapshot)",
-                                   "cache_snapshot": snap})
+                                   "cache_snapshot": snap, "requests_delta": requests_delta(snap, last)})
         return 0
 
     if a.cmd == "check":

@@ -8,8 +8,8 @@ cache break-even claim once contradicted the multipliers printed right beside it
 
 | | |
 |---|---|
-| **Toolkit** | `tools/cost.py`, 10 subcommands, standard library only (v2.4) |
-| **Tests** | 70 pass, run against fixture data, independent of `rates.json` |
+| **Toolkit** | `tools/cost.py`, 14 subcommands, standard library only, tested on Python 3.14 (v2.5) |
+| **Tests** | 92 pass, run against fixture data, independent of `rates.json` |
 | **Depends on** | nothing to install; `rates.json` must be filled in before real use |
 | **Ships** | complete |
 
@@ -56,11 +56,18 @@ cache break-even claim once contradicted the multipliers printed right beside it
 - `references/metering.md`: where measured actuals come from on each surface (provider
   `usage`, a Headroom proxy's `/stats`, ccusage) and how estimates are paired with them.
 - `tools/cost.py`: subcommands `cost`, `breakeven`, `compare`, `estimate`, `verify`,
-  `render`, `cpd`, `headroom`, `pairs`, `check`, with a `--log` flag on `cost` and `headroom`
+  `render`, `cpd`, `headroom`, `pairs`, `check`, `plan`, `ship`, `realise`, `score`, with a `--log` flag on `cost` and `headroom`
   that appends to `cost_log.jsonl` (or `$TOKEN_AWARE_LOG`; the repo's `.gitignore` keeps the
   log out of commits). Pure functions; network calls happen only in `headroom` (a local
   proxy's `/stats`) and `check` (LiteLLM's price map, used to flag drift, never to update). Refuses to compute against an expired rate table or any
   fact older than 90 days, and warns past 30.
+- The savings scoreboard (v2.5): `plan` records the saving a change is predicted to make
+  before it ships, `ship` its go-live, `realise` the saving measured afterwards, and `score`
+  reports savings by lever with `measured`, `modelled-baseline` and `estimate` kept in
+  separate columns, per-unit prediction accuracy, the zero-or-negative outcomes and the
+  lessons recorded beside them. The log is append-only, both sides of every comparison are
+  repriced under the current `rates.json`, and dollars on a subscription are labelled
+  list-price rather than spend. `references/metering.md` § Scoreboard has the rules.
 
 ## The decision order
 
@@ -115,10 +122,13 @@ Copy the folder to wherever your surface reads skills from. The toolkit resolves
 ```bash
 cd token-aware/tools
 pip install pytest      # or: pip install pytest --break-system-packages, depending on your environment
-python -m pytest -q     # 70 tests, all pass regardless of what's in rates.json;
+python -m pytest -q     # 92 tests, all pass regardless of what's in rates.json;
                          # they run against their own fixture data, not the shipped template
 python cost.py render   # will refuse until rates.json has real, unexpired dates
 ```
+
+Tested on Python 3.14 (`uv run --python 3.14 --with pytest pytest -q` is the route the
+counts above come from); the code is standard library only.
 
 ## Adapting this skill
 

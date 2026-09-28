@@ -3,7 +3,7 @@ name: token-aware
 description: Reduce LLM cost in prompts, pipelines, and code that calls an LLM, measure actual spend against estimates, and author cost-aware prompts for other Claude surfaces to run. Use for token or cost audits, metering or pricing a session, model routing, prompt caching, batching, replacing an LLM call with deterministic code, or writing an instruction file that will execute elsewhere. Not for general code or performance optimisation.
 ---
 
-# Token-Aware Prompting and Code Generation | v2.4 | 2026-09-28
+# Token-Aware Prompting and Code Generation | v2.5 | 2026-09-28
 
 ## Core principle
 
@@ -15,6 +15,7 @@ Applies in two directions: prompts written for Claude Code, and Python that Clau
 
 - `references/pricing.md`: how to get current rates, caching math, batch API, what not to hardcode. **Read before quoting any cost figure or ratio.**
 - `references/metering.md`: where measured actuals come from on each surface (provider `usage`, a Headroom proxy's `/stats`, ccusage), and how `tools/cost.py pairs` scores estimates against them. A cost figure enters a report only beside a measured actual, or labelled "estimate, no actual".
+- `references/metering.md` § Scoreboard: the savings ledger. `cost.py plan` records the predicted saving before a change ships, `ship` its go-live, `realise` the saving measured after it, and `score` reports savings by lever with `measured`, `modelled-baseline` and `estimate` kept apart, plus per-unit prediction accuracy.
 - `references/prompt_rules.md`: prompt construction rules for calls you author
 - `references/python_replacements.md`: REPLACE patterns with worked code
 - `references/module_layout.md`: prompt builders, token estimation, module structure
@@ -69,6 +70,8 @@ KEEP      genuinely requires judgement and the prompt is already minimal.
 6. **KEEP** with a written justification when none of the above applies.
 
 The order is for evaluation, not a stop at the first match: a call that is BATCH-eligible is still checked for REPLACE, and savings stack.
+
+Every change this order recommends gets a `cost.py plan` (the predicted saving per call or per day, and its basis) before it ships and a `cost.py ship` when it goes live, so `realise` can score it afterwards; a prediction written after the fact is logged `--post-hoc` and stays outside prediction accuracy. PROXY, the scoreboard's sixth lever, labels the transport-layer savings a compression proxy makes; it is not a label this taxonomy assigns to a call. `metering.md` § Scoreboard has the record kinds and the rules.
 
 Where a context-compression proxy such as Headroom already fronts the calls, it performs TRIM on tool outputs and aligns cache prefixes at the transport layer. Credit those savings to the proxy, audit what it leaves, and never recommend the same cut twice; `metering.md` § Headroom proxy has the checks.
 

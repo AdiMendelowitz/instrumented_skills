@@ -547,3 +547,384 @@ def test_counters_series_tolerates_missing_fields():
 def test_cli_cost_reports_unpriceable_calls_cleanly(capsys):
     assert C.main(["cost", "--model", "claude-imaginary-9", "--in", "1", "--out", "1"]) == 2
     assert "not priced" in capsys.readouterr().err
+
+
+# --- v2.5: savings scoreboard (plan, ship, realise, score) ---------------------
+# Every refusal test asserts the message text and includes a positive control, because
+# on the v2.4 code an unknown subcommand already exits 2 through argparse.
+
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
+T0 = datetime(2026, 9, 1, 12, 0, tzinfo=timezone.utc)  # live_from for the hand-built logs
+PID = "S-20260812-1"
+
+
+def _t(days: float) -> str:
+    return (T0 + timedelta(days=days)).isoformat()
+
+
+def _plan(**kw) -> dict:
+    base = {"kind": "plan", "id": PID, "site": "s", "lever": "TRIM", "method": "before-after",
+            "predicted_usd": 0.001, "unit": "call", "predicted_basis": "hand estimate",
+            "billing": "metered", "post_hoc": False, "ts": _t(-20)}
+    base.update(kw)
+    return base
+
+
+def _shipped(**kw) -> dict:
+    base = {"kind": "shipped", "plan_id": PID, "ts": _t(0), "live_from": _t(0)}
+    base.update(kw)
+    return base
+
+
+def _actual(day: float, in_t=1000, out_t=100, site="s", model="claude-sonnet-5", calls=1, **kw) -> dict:
+    rec = {"site": site, "kind": "actual", "model": model, "in_tokens": in_t, "out_tokens": out_t,
+           "calls": calls, "usd": 0.0, "ts": _t(day)}
+    rec.update(kw)
+    return rec
+
+
+def _before(n=25, **kw):
+    return [_actual(-13 + i * 0.5, **kw) for i in range(n)]
+
+
+def _after(n=25, **kw):
+    return [_actual(i * 0.5, **kw) for i in range(n)]
+
+
+def _log(*records) -> None:
+    C.LOG_PATH.write_text("".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
+
+
+def _records() -> list[dict]:
+    return C._read_jsonl(C.LOG_PATH)
+
+
+def _realised() -> dict:
+    return [r for r in _records() if r.get("kind") == "realised"][-1]
+
+
+def _auto(*extra) -> int:
+    return C.main(["realise", "--id", PID, "--auto", "--until", _t(14), *extra])
+
+
+# 1
+def test_pair_errors_ignores_plan_records_even_with_a_stray_usd():
+    base = [{"site": "s", "kind": "estimate", "usd": 10.0}, {"site": "s", "kind": "actual", "usd": 5.0}]
+    stray = [base[0], {"site": "s", "kind": "plan", "id": PID, "usd": 3.0}, base[1]]
+    assert C.pair_errors(stray)["rows"] == C.pair_errors(base)["rows"]
+    assert C.pair_errors(stray)["rows"][0]["error_pct"] == pytest.approx(100.0)
+
+
+# 2
+def test_plan_ids_are_unique_and_plan_refuses_bad_inputs(capsys):
+    ok = ["plan", "--site", "s", "--lever", "TRIM", "--method", "before-after", "--predicted-usd", "0.01",
+          "--unit", "call", "--basis", "b"]
+    assert C.main(ok) == 0 and C.main(ok) == 0  # positive control
+    plans = [r for r in _records() if r["kind"] == "plan"]
+    assert len({p["id"] for p in plans}) == 2 and all(p["id"].startswith("S-") for p in plans)
+    assert all("usd" not in p for p in plans)
+    assert C.main(ok[:8] + ["0", "--unit", "call"]) == 2
+    assert "predicted_usd must be positive" in capsys.readouterr().err
+    assert C.main(["plan", "--site", "s", "--lever", "BATCH", "--method", "headroom-cache",
+                   "--predicted-usd", "1", "--unit", "call"]) == 2
+    assert "not listed for lever BATCH" in capsys.readouterr().err
+
+
+# 3
+def test_ship_refuses_unknown_and_second_ship(capsys):
+    _log(_plan())
+    assert C.main(["ship", "--id", "S-19990101-9"]) == 2
+    assert "not found" in capsys.readouterr().err
+    assert C.main(["ship", "--id", PID]) == 0  # positive control
+    assert [r["kind"] for r in _records()] == ["plan", "shipped"]
+    assert C.main(["ship", "--id", PID]) == 2
+    assert "already has a shipped record" in capsys.readouterr().err
+
+
+# 4
+def test_realise_refuses_without_shipped_and_when_plan_postdates_ship(capsys):
+    _log(_plan(), *_before(), *_after())
+    assert _auto() == 2
+    assert "has no shipped record" in capsys.readouterr().err
+    _log(_plan(ts=_t(1)), _shipped(), *_before(), *_after())  # hand-edited: planned after it shipped
+    assert _auto() == 2
+    assert "(P2)" in capsys.readouterr().err
+    _log(_plan(), _shipped(), *_before(), *_after())
+    assert _auto() == 0  # positive control
+
+
+# 5
+def test_second_realise_needs_supersede_and_leaves_the_first_unchanged(capsys):
+    _log(_plan(), _shipped(), *_before(), *_after())
+    assert _auto() == 0
+    first = _realised()
+    assert _auto() == 2
+    err = capsys.readouterr().err
+    assert "already has realised record" in err and "--supersede" in err
+    assert _auto("--supersede", first["id"]) == 0
+    realised = [r for r in _records() if r["kind"] == "realised"]
+    assert len(realised) == 2 and realised[0] == first and realised[1]["supersedes"] == first["id"]
+
+
+# 6
+def test_before_after_refuses_below_min_n_on_either_side(capsys):
+    _log(_plan(), _shipped(), *_before(19), *_after())
+    assert _auto() == 2
+    assert "before window holds 19" in capsys.readouterr().err
+    assert _auto("--min-n", "19") == 0  # positive control
+    _log(_plan(), _shipped(), *_before(), *_after(19))
+    assert _auto() == 2
+    assert "after window holds 19" in capsys.readouterr().err
+
+
+# 7
+def test_before_after_reprices_both_sides_so_a_price_change_is_not_a_saving():
+    _log(_plan(), _shipped(), *_before(usd=9.99), *_after(usd=0.001))
+    assert _auto() == 0
+    assert _realised()["realised_usd"] == pytest.approx(0.0, abs=1e-12)
+
+
+# 8
+def test_before_after_matches_a_hand_computed_fixture_and_ignores_cache_and_estimates():
+    noise = [_actual(3, in_t=1, out_t=0, kind="estimate", usd=0.0),
+             _actual(4, in_t=0, out_t=0, calls=0, usd=5.0, cache_write_1h=1000)]
+    _log(_plan(), _shipped(), *_before(), *_after(in_t=500), *noise)
+    assert _auto() == 0
+    r = _realised()
+    # sonnet 2/10: before 0.003 per call, after 0.002; 0.001 x 25 calls
+    assert r["realised_usd"] == pytest.approx(0.025)
+    assert r["realised_per_unit"] == pytest.approx(0.001)
+    assert r["evidence"] == "measured" and r["method"] == "before-after"
+    assert (r["n_before"], r["n_after"], r["days"]) == (25, 25, 14)
+    assert r["tokens_per_call_before"] == pytest.approx(1000) and r["tokens_per_call_after"] == pytest.approx(500)
+    assert "usd" not in r
+
+
+# 9
+def test_repricing_passes_tool_choice_so_dropping_tools_shows_the_overhead_saving():
+    _log(_plan(), _shipped(), *_before(tool_choice="auto"), *_after())
+    assert _auto() == 0
+    assert _realised()["realised_usd"] == pytest.approx(354 * 2e-6 * 25)
+
+
+# 10
+def test_downgrade_prices_the_before_side_at_baseline_model():
+    plan = _plan(lever="DOWNGRADE", baseline_model="claude-opus-5", after_model="claude-haiku-4-5-20251001")
+    _log(plan, _shipped(), *_before(model="claude-haiku-4-5-20251001"), *_after(model="claude-haiku-4-5-20251001"))
+    assert _auto() == 0
+    # opus 0.0075 per call against haiku 0.0015, times 25
+    assert _realised()["realised_usd"] == pytest.approx(0.006 * 25)
+
+
+# 11
+def _proxy_req(day: float, **kw) -> dict:
+    return _actual(day, in_t=400, out_t=100, site="claude-code:sess", model="claude-opus-5", via_headroom=True,
+                   in_tokens_original=1000, request_id=f"hr_{day}", request_ts=_t(day), **kw)
+
+
+def _cache(day: float, w1h: float, delta: float, model="claude-opus-5", **kw) -> dict:
+    rec = {"site": "claude-code:sess", "kind": "actual", "model": model, "method": "headroom /stats (session cache)",
+           "via_headroom": True, "cache_write_5m": 0.0, "cache_write_1h": w1h, "cache_read": 0.0, "calls": 0,
+           "usd": 0.0, "cache_snapshot": {}, "requests_delta": delta, "ts": _t(day)}
+    rec.update(kw)
+    return rec
+
+
+def test_headroom_proxy_windows_on_request_ts_without_cap_and_flags_cache_cost(capsys):
+    plan = _plan(lever="PROXY", method="headroom-proxy", site="claude-code")
+    reqs = [_proxy_req(1), _proxy_req(5), _proxy_req(20),                    # day 20: no 14-day cap
+            _proxy_req(-1, ts=_t(1))]                                        # request_ts before live_from: out
+    _log(plan, _shipped(), *reqs, _cache(-5, 1000, 10), _cache(3, 5000, 10))
+    assert C.main(["realise", "--id", PID, "--auto", "--until", _t(30)]) == 0
+    r = _realised()
+    assert r["realised_usd"] == pytest.approx(3 * 600 * 5e-6)
+    assert r["n_after"] == 3 and r["evidence"] == "modelled-baseline"
+    assert "CACHE COST ROSE" in capsys.readouterr().out
+    _log(plan, _shipped(), *reqs, _cache(3, 5000, 10))
+    assert C.main(["realise", "--id", PID, "--auto", "--until", _t(30)]) == 0
+    assert "NO BEFORE DATA" in capsys.readouterr().out
+
+
+# 12
+def test_headroom_cache_can_be_negative_and_uses_the_model_read_multiplier():
+    plan = _plan(lever="CACHE", method="headroom-cache", site="claude-code")
+    before = {"site": "claude-code:sess", "kind": "snapshot", "method": "headroom /stats (snapshot)",
+              "cache_snapshot": {}, "requests_delta": 25, "ts": _t(-5)}
+    after = _cache(3, 1000, 25, model="claude-opus-5-5", cache_read=1000.0)
+    _log(plan, _shipped(), before, after)
+    assert _auto() == 0
+    r = _realised()
+    # opus-5-5 at 4/M with a 0.05 read multiplier: 1000 x 0.95 read saving against 1000 x 1.0 write premium
+    assert r["realised_usd"] == pytest.approx(4e-6 * (1000 * 0.95 - 1000 * 1.0))
+    assert r["realised_per_unit"] == pytest.approx(r["realised_usd"] / 25) and r["realised_per_unit"] < 0
+
+
+# 13
+def test_requests_delta_is_computed_once_per_run_and_survives_a_restart(rates, tmp_path):
+    recs, snap = C.headroom_cache_records(STATS, rates, "s", None)
+    assert recs[0]["requests_delta"] == 3  # full total on the first run
+    two = json.loads(json.dumps(STATS))
+    two["requests"]["total"] = 8
+    two["cost"]["per_model"]["claude-sonnet-5"] = {"cache_write_5m_tokens": 10, "cache_write_1h_tokens": 0}
+    two["cost"]["per_model"]["claude-opus-5"]["cache_write_1h_tokens"] = 107_551 + 100
+    recs, _ = C.headroom_cache_records(two, rates, "s", snap)
+    assert len(recs) == 2 and [("requests_delta" in r) for r in recs].count(True) == 1
+    assert next(r["requests_delta"] for r in recs if "requests_delta" in r) == 5
+    restarted = json.loads(json.dumps(STATS))
+    restarted["requests"]["total"] = 2
+    recs, _ = C.headroom_cache_records(restarted, rates, "s", snap)
+    assert recs[0]["requests_delta"] == 2
+    f = tmp_path / "stats.json"; f.write_text(json.dumps(STATS))
+    assert C.main(["headroom", "--file", str(f), "--site", "s", "--log"]) == 0
+    assert C.main(["headroom", "--file", str(f), "--site", "s", "--log"]) == 0
+    snapshot_only = [r for r in _records() if r.get("kind") == "snapshot"]
+    assert len(snapshot_only) == 1 and snapshot_only[0]["requests_delta"] == 0
+
+
+# 14
+def test_ship_at_before_plan_needs_post_hoc_and_post_hoc_is_outside_accuracy(capsys):
+    assert C.main(["plan", "--site", "claude-code", "--lever", "PROXY", "--method", "headroom-proxy",
+                   "--post-hoc", "--billing", "unknown"]) == 0
+    assert C.main(["plan", "--site", "s", "--lever", "TRIM", "--method", "before-after",
+                   "--predicted-usd", "0.01", "--unit", "call"]) == 0
+    post_hoc, normal = [r["id"] for r in _records() if r["kind"] == "plan"]
+    assert C.main(["ship", "--id", normal, "--at", "2026-01-01T00:00:00+00:00"]) == 2
+    assert "earlier than plan.ts" in capsys.readouterr().err
+    assert C.main(["ship", "--id", post_hoc, "--at", "2026-01-01T00:00:00+00:00"]) == 0  # positive control
+    shipped = [r for r in _records() if r["kind"] == "shipped"][0]
+    assert shipped["live_from"] == "2026-01-01T00:00:00+00:00"
+    recs = _records() + [
+        {"kind": "realised", "id": "R-1", "plan_id": post_hoc, "evidence": "modelled-baseline",
+         "method": "headroom-proxy", "realised_usd": 0.5, "realised_per_unit": None, "ts": _t(1)},
+        {"kind": "realised", "id": "R-2", "plan_id": normal, "evidence": "measured",
+         "method": "before-after", "realised_usd": 0.2, "realised_per_unit": 0.02, "ts": _t(2)},
+    ]
+    _log(*recs)
+    capsys.readouterr()
+    assert C.main(["score", "--json"]) == 0
+    res = json.loads(capsys.readouterr().out)
+    assert [(a["lever"], a["n"]) for a in res["accuracy"]] == [("TRIM", 1)]
+
+
+# 15
+def test_time_parser_normalises_z_offset_and_naive_and_counts_unparseable(capsys):
+    same = [C.parse_ts("2026-09-01T12:00:00Z"), C.parse_ts("2026-09-01T15:00:00+03:00"),
+            C.parse_ts("2026-09-01T12:00:00")]
+    assert same[0] == same[1] == same[2] == T0
+    assert C.parse_ts("t1") is None and C.parse_ts(None) is None
+    _log(_plan(), _shipped(), *_before(), *_after(), _actual(1, request_ts="t1"))
+    assert _auto() == 0
+    assert _realised()["skipped_times"] == 1 and _realised()["n_after"] == 25
+    assert "1 record(s) skipped" in capsys.readouterr().out
+
+
+# 16
+def test_manual_realise_is_never_measured(capsys):
+    _log(_plan(lever="REPLACE", method="manual", agreement=0.97, agreement_n=40), _shipped())
+    manual = ["realise", "--id", PID, "--until", _t(14), "--realised-usd", "3.0", "--basis", "app logs",
+              "--calls-replaced", "300"]
+    assert C.main(manual + ["--evidence", "measured"]) == 2
+    assert "never measured" in capsys.readouterr().err
+    assert C.main(manual + ["--evidence", "estimate"]) == 0  # positive control: lowering is allowed
+    r = _realised()
+    assert r["evidence"] == "estimate" and r["realised_per_unit"] == pytest.approx(0.01)
+    assert r["calls_replaced"] == 300 and r["realised_basis"] == "app logs"
+
+
+# 17
+def _score_log() -> list[dict]:
+    return [
+        _plan(id="S-1", lever="TRIM", billing="metered"),
+        _plan(id="S-2", lever="TRIM", billing="subscription"),
+        _plan(id="S-3", lever="REPLACE", method="manual", billing="unknown", predicted_usd=0.01),
+        _shipped(plan_id="S-1"), _shipped(plan_id="S-2"), _shipped(plan_id="S-3"),
+        {"kind": "realised", "id": "R-1", "plan_id": "S-1", "evidence": "measured", "method": "before-after",
+         "realised_usd": 0.025, "realised_per_unit": 0.001, "ts": _t(5), "lesson": "tools cost"},
+        {"kind": "realised", "id": "R-2", "plan_id": "S-2", "evidence": "measured", "method": "before-after",
+         "realised_usd": 0.03, "realised_per_unit": 0.0012, "ts": _t(6)},
+        {"kind": "realised", "id": "R-3", "plan_id": "S-3", "evidence": "modelled-baseline", "method": "manual",
+         "realised_usd": 0.0, "realised_per_unit": 0.0, "calls_replaced": 10, "ts": _t(7), "lesson": "no gain"},
+    ]
+
+
+def test_score_keeps_evidence_classes_and_billing_apart(capsys):
+    _log(*_score_log())
+    assert C.main(["score"]) == 0
+    out = capsys.readouterr().out
+    assert "total" not in out.lower()
+    assert out.count("list-price") == 2 and "unaudited" in out and "S-3" in out
+    assert C.main(["score", "--json"]) == 0
+    res = json.loads(capsys.readouterr().out)
+    rows = {(r["lever"], r["billing"]): r for r in res["by_lever"]}
+    assert set(rows) == {("TRIM", "metered"), ("TRIM", "subscription"), ("REPLACE", "unknown")}
+    assert rows[("TRIM", "metered")]["measured"]["usd"] == pytest.approx(0.025)
+    assert rows[("REPLACE", "unknown")]["modelled-baseline"]["n"] == 1 and rows[("REPLACE", "unknown")]["list_price"]
+    acc = {(a["lever"], a["evidence"]): a for a in res["accuracy"]}
+    assert acc[("TRIM", "measured")]["n"] == 2 and acc[("TRIM", "measured")]["small_sample"]
+    assert acc[("REPLACE", "modelled-baseline")]["mape_pct"] == pytest.approx(100.0)
+    assert [z["plan_id"] for z in res["zero_or_negative"]] == ["S-3"]
+    assert [u["plan_id"] for u in res["unaudited_replace"]] == ["S-3"]
+    assert [l["lesson"] for l in res["lessons"]] == ["no gain", "tools cost"]
+
+
+# 18
+def test_score_reads_the_newest_realised_per_plan_and_lists_the_superseded(capsys):
+    recs = _score_log() + [{"kind": "realised", "id": "R-4", "plan_id": "S-1", "evidence": "measured",
+                            "method": "before-after", "realised_usd": 0.05, "realised_per_unit": 0.002,
+                            "supersedes": "R-1", "ts": _t(9)}]
+    _log(*recs)
+    assert C.main(["score", "--json", "--lever", "TRIM"]) == 0
+    res = json.loads(capsys.readouterr().out)
+    rows = {(r["lever"], r["billing"]): r for r in res["by_lever"]}
+    assert rows[("TRIM", "metered")]["measured"]["usd"] == pytest.approx(0.05)
+    assert res["superseded"] == ["R-1"] and set(rows) == {("TRIM", "metered"), ("TRIM", "subscription")}
+
+
+# 19
+def test_score_out_writes_utf8_without_bom(tmp_path):
+    recs = _score_log()
+    recs[-1]["lesson"] = "café ≠ caff"
+    _log(*recs)
+    out = tmp_path / "score.json"
+    assert C.main(["score", "--json", "--out", str(out)]) == 0
+    raw = out.read_bytes()
+    assert not raw.startswith(b"\xef\xbb\xbf")
+    assert json.loads(raw.decode("utf-8"))["lessons"][0]["lesson"] == "café ≠ caff"
+
+
+# 20
+def test_expired_rates_make_realise_refuse(capsys):
+    _log(_plan(), _shipped(), *_before(), *_after())
+    assert _auto() == 0  # positive control
+    data = json.loads(C.RATES_PATH.read_text()); data["expires"] = "2026-01-01"
+    C.RATES_PATH.write_text(json.dumps(data))
+    assert _auto("--supersede", _realised()["id"]) == 2
+    assert "expired" in capsys.readouterr().err
+
+
+# critique round 1 on v2.5: refusals the first 20 items left untested
+def test_more_refusals_each_with_a_positive_control(capsys):
+    _log(_plan(), _shipped(), *_before(), *_after())
+    assert _auto() == 0
+    assert _auto("--supersede", "R-19990101-9") == 2
+    assert "is not the newest realised record" in capsys.readouterr().err
+    assert C.main(["plan", "--site", "s", "--lever", "PROXY", "--method", "headroom-proxy", "--post-hoc",
+                   "--predicted-usd", "1", "--unit", "call"]) == 2
+    assert "post_hoc plan takes no predicted_usd" in capsys.readouterr().err
+    assert C.main(["plan", "--site", " ", "--lever", "TRIM", "--method", "manual", "--predicted-usd", "1",
+                   "--unit", "day"]) == 2
+    assert "blank site" in capsys.readouterr().err
+    assert C.main(["realise", "--id", PID, "--auto", "--until", _t(-1), "--supersede", _realised()["id"]]) == 2
+    assert "is not after live_from" in capsys.readouterr().err
+    assert C.main(["plan", "--site", "s", "--lever", "TRIM", "--method", "manual", "--predicted-usd", "1",
+                   "--unit", "day"]) == 0  # positive control
+
+
+def test_headroom_proxy_flags_cache_records_without_a_request_count(capsys):
+    plan = _plan(lever="PROXY", method="headroom-proxy", site="claude-code")
+    legacy = {k: v for k, v in _cache(-5, 1000, 10).items() if k != "requests_delta"}  # pre-v2.5 record
+    _log(plan, _shipped(), _proxy_req(1), legacy, _cache(3, 5000, 10))
+    assert C.main(["realise", "--id", PID, "--auto", "--until", _t(30)]) == 0
+    out = capsys.readouterr().out
+    assert "NO REQUEST COUNT" in out and "CACHE COST ROSE" not in out
