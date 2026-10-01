@@ -1,4 +1,4 @@
-# Metering: measured actuals beside estimates | v1.2 | 2026-09-28 | review by 2026-10-28
+# Metering: measured actuals beside estimates | v1.3 | 2026-09-29 | review by 2026-10-28
 
 An estimate that never meets a measured actual cannot be scored, and a skill whose figures cannot be scored is asserting, not measuring. This file names where actuals come from and how `tools/cost.py` pairs them with estimates. Read it before putting any cost figure in a report.
 
@@ -99,7 +99,7 @@ The per-unit figure divides the realised saving by the calls on the after side f
 
 ## Log schema
 
-One JSON object per line in `tools/cost_log.jsonl`, or at `$TOKEN_AWARE_LOG` when set (point it outside the skill folder, for example `<project>/.claude/token-aware/cost_log.jsonl`, so private usage never ships with the skill). Written only by `cost.py`.
+One JSON object per line in `tools/cost_log.jsonl`, or at `$TOKEN_AWARE_LOG` when set (point it outside the skill folder, for example `<skills-root>/ops/token-aware/cost_log.jsonl`, beside `skills/` rather than inside it, so private usage never ships with the skill, its zip or its public copy; set it once, persistently, so every copy of the skill reads and writes the same ledger). Written only by `cost.py`.
 
 | field | meaning |
 |---|---|
@@ -115,7 +115,7 @@ One JSON object per line in `tools/cost_log.jsonl`, or at `$TOKEN_AWARE_LOG` whe
 | `requests_delta` | requests since the previous snapshot (the whole count after a restart), stored once per `headroom --log` run on the record carrying `cache_snapshot` or on the `snapshot` record; the denominator for per-request cache figures |
 | `kind: plan` with `id`, `lever`, `method`, `predicted_usd`, `unit`, `predicted_basis`, `billing`, `post_hoc`, `baseline_model`, `after_model`, `agreement`, `agreement_n` | the prediction, written before the change ships (§ Scoreboard) |
 | `kind: shipped` with `plan_id`, `live_from` | the go-live moment; `live_from` is `ts` unless `ship --at` gave an earlier real date |
-| `kind: realised` with `id`, `plan_id`, `method`, `evidence`, `realised_usd`, `realised_per_unit`, `realised_basis`, `calls_replaced`, `window_start`, `window_end`, `days`, `n_before`, `n_after`, `tokens_per_call_before`, `tokens_per_call_after`, `skipped_times`, `supersedes`, `lesson` | the score over the window; `score` reads the newest per plan |
+| `kind: realised` with `id`, `plan_id`, `method`, `evidence`, `realised_usd`, `realised_per_unit`, `realised_basis`, `calls_replaced`, `window_start`, `window_end`, `days`, `n_before`, `n_after`, `calls_before`, `calls_after`, `tokens_per_call_before`, `tokens_per_call_after`, `skipped_times`, `supersedes`, `lesson` | the score over the window; `score` reads the newest per plan |
 
 ## Comparable tools (accessed 2026-09-28)
 

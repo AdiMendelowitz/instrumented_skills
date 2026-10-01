@@ -3,7 +3,7 @@ name: token-aware
 description: Reduce LLM cost in prompts, pipelines, and code that calls an LLM, measure actual spend against estimates, and author cost-aware prompts for other Claude surfaces to run. Use for token or cost audits, metering or pricing a session, model routing, prompt caching, batching, replacing an LLM call with deterministic code, or writing an instruction file that will execute elsewhere. Not for general code or performance optimisation.
 ---
 
-# Token-Aware Prompting and Code Generation | v2.5 | 2026-09-28
+# Token-Aware Prompting and Code Generation | v2.5.1 | 2026-09-29
 
 ## Core principle
 

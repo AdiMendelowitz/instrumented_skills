@@ -16,10 +16,8 @@ Subcommands: cost, breakeven, compare, estimate, verify, render, cpd, headroom, 
 plan, ship, realise, score. The last four are the savings scoreboard: a saving is predicted
 before a change ships and scored after it, with evidence classes kept apart (metering.md).
 Standard library only, tested on Python 3.14.
-Version 2.5 (2026-09-28).
+Version 2.5.1 (2026-09-29): one LEDGER_KINDS constant; no __future__ import.
 """
-
-from __future__ import annotations
 
 import argparse
 import json
@@ -35,7 +33,8 @@ from statistics import median
 HERE = Path(__file__).resolve().parent
 RATES_PATH = HERE / "rates.json"
 # The log holds private usage records. TOKEN_AWARE_LOG moves it out of the skill folder
-# (for example to <project>/.claude/token-aware/cost_log.jsonl) so it never ships with the skill.
+# (for example to <skills-root>/ops/token-aware/cost_log.jsonl, beside skills/ rather than inside it)
+# so it never ships with the skill, its zip or its public copy.
 LOG_PATH = Path(os.environ["TOKEN_AWARE_LOG"]) if os.environ.get("TOKEN_AWARE_LOG") else HERE / "cost_log.jsonl"
 
 WARN_WINDOW_DAYS = 7
@@ -549,6 +548,7 @@ UNITS = ("call", "day")
 WINDOW_DAYS = 14
 DEFAULT_MIN_N = 20
 SCOREBOARD_KINDS = {"plan", "shipped", "realised", "snapshot"}  # none of these is an actual
+LEDGER_KINDS = SCOREBOARD_KINDS - {"snapshot"}  # the scoreboard's own records; snapshots stay in windows for requests_delta
 
 
 class Refusal(ValueError):
@@ -693,7 +693,7 @@ def _window_records(records: list[dict], site: str, start: datetime, end: dateti
     """Non-scoreboard records under the site with a parseable time in [start, end), and the unparseable count."""
     out, skipped = [], 0
     for r in records:
-        if r.get("kind") in ("plan", "shipped", "realised") or not _site_matches(r.get("site"), site):
+        if r.get("kind") in LEDGER_KINDS or not _site_matches(r.get("site"), site):
             continue
         t = record_time(r)
         if t is None:
@@ -997,7 +997,7 @@ def score_report(records: list[dict], *, since: str | None = None, site: str | N
                  for p, r in rows if p["lever"] == "REPLACE" and p.get("agreement") is None]
     lessons = sorted(({"ts": r.get("ts"), "plan_id": p["id"], "lever": p["lever"], "lesson": r["lesson"]}
                       for p, r in rows if r.get("lesson")), key=lambda x: x["ts"] or "", reverse=True)[:10]
-    skipped = sum(1 for r in records if r.get("kind") not in ("plan", "shipped", "realised") and record_time(r) is None)
+    skipped = sum(1 for r in records if r.get("kind") not in LEDGER_KINDS and record_time(r) is None)
     header = {"plans": len(plans),
               "billing_mix": {b: sum(1 for p in plans.values() if p.get("billing", "unknown") == b) for b in BILLING},
               "unshipped": [pid for pid in plans if pid not in shipped_ids],

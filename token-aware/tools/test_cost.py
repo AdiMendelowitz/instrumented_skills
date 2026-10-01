@@ -7,8 +7,6 @@ with your own verified figures for actual use; do not edit the test values below
 match. They exist to check the arithmetic, not to track current pricing.
 """
 
-from __future__ import annotations
-
 import json
 from datetime import date
 from pathlib import Path
@@ -928,3 +926,26 @@ def test_headroom_proxy_flags_cache_records_without_a_request_count(capsys):
     assert C.main(["realise", "--id", PID, "--auto", "--until", _t(30)]) == 0
     out = capsys.readouterr().out
     assert "NO REQUEST COUNT" in out and "CACHE COST ROSE" not in out
+
+
+# --- v2.5.1: one constant for the ledger kinds -----------------------------------
+
+def test_ledger_kinds_follow_scoreboard_kinds():
+    assert C.LEDGER_KINDS == C.SCOREBOARD_KINDS - {"snapshot"}
+    assert "snapshot" not in C.LEDGER_KINDS
+
+
+@pytest.mark.parametrize("kind", sorted(C.SCOREBOARD_KINDS - {"snapshot"}))
+def test_ledger_kinds_are_excluded_from_windows_and_skip_counts(kind):
+    from datetime import datetime, timezone
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    recs = [
+        {"site": "claude-code", "kind": kind, "ts": "2026-09-10T00:00:00+00:00"},
+        {"site": "claude-code", "kind": kind, "ts": "not a time"},
+        {"site": "claude-code:s1", "kind": "snapshot", "ts": "2026-09-10T00:00:00+00:00", "requests_delta": 3},
+    ]
+    out, skipped = C._window_records(recs, "claude-code", start, end)
+    assert [r["kind"] for r in out] == ["snapshot"]
+    assert skipped == 0
+    assert C.score_report(recs)["header"]["skipped_times"] == 0

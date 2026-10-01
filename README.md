@@ -12,7 +12,7 @@ repeated work on the same target compound instead of restarting from zero every 
 | Skill | What it does | Status |
 |---|---|---|
 | [`critique/`](critique/) | Adversarial multi-lens review of a file, with memory: reads its own prior log before starting, so a second pass reconciles what changed instead of rediscovering it. | Ships complete |
-| [`token-aware/`](token-aware/) | LLM cost reduction for prompts and pipelines. Deterministic arithmetic in Python, rates dated and source-tagged, refuses to compute against stale numbers. Records predicted against realised savings per change. | Ships complete, 92 tests pass |
+| [`token-aware/`](token-aware/) | LLM cost reduction for prompts and pipelines. Deterministic arithmetic in Python, rates dated and source-tagged, refuses to compute against stale numbers. Records predicted against realised savings per change. | Ships complete, 96 tests pass |
 | [`retrospective/`](retrospective/) | Panel-style retros with anchored lenses, no finding without a quote, line, or named absence, and a cost lens that reports nothing rather than invents an ROI. Capture can be manual or automatic via a Stop hook. | Ships complete, optional capture hook |
 | [`handoff/`](handoff/) | A structured end-of-session snapshot, schema instead of prose, so a decision and a suggestion can't blur together a few sessions later. Ships with a savings/lint toolkit and an optional session-length hook. | Ships complete, 55 tests pass |
 | [`kb-search/`](kb-search/) | Ranked BM25 search over what the other four write. Standard library only, no LLM call. | Ships complete, tests pass (run for current count) |

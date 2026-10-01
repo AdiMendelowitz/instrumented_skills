@@ -8,8 +8,8 @@ cache break-even claim once contradicted the multipliers printed right beside it
 
 | | |
 |---|---|
-| **Toolkit** | `tools/cost.py`, 14 subcommands, standard library only, tested on Python 3.14 (v2.5) |
-| **Tests** | 92 pass, run against fixture data, independent of `rates.json` |
+| **Toolkit** | `tools/cost.py`, 14 subcommands, standard library only, tested on Python 3.14 (v2.5.1) |
+| **Tests** | 96 pass, run against fixture data, independent of `rates.json` |
 | **Depends on** | nothing to install; `rates.json` must be filled in before real use |
 | **Ships** | complete |
 
@@ -122,7 +122,7 @@ Copy the folder to wherever your surface reads skills from. The toolkit resolves
 ```bash
 cd token-aware/tools
 pip install pytest      # or: pip install pytest --break-system-packages, depending on your environment
-python -m pytest -q     # 92 tests, all pass regardless of what's in rates.json;
+python -m pytest -q     # 96 tests, all pass regardless of what's in rates.json;
                          # they run against their own fixture data, not the shipped template
 python cost.py render   # will refuse until rates.json has real, unexpired dates
 ```
