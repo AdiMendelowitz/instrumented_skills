@@ -1,0 +1,9 @@
+# Shared client settings for the yard services.
+
+[client]
+connect_ms = 900
+retries = 2
+
+[upstream.billing]
+timeout_ms = 3000
+retry_budget = 1

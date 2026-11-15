@@ -1,0 +1,167 @@
+[
+  {
+    "id": "P01",
+    "kind": "rule",
+    "prompt_file": "P01/prompt.md",
+    "grader": "P01/grade.py",
+    "output_file": "out/orders_export.csv",
+    "depends_on": {
+      "file": "CLAUDE.md",
+      "quote": "Every CSV written by a script in `exports/` begins with the line `# ostr-export v3`, and the header row follows directly beneath it."
+    }
+  },
+  {
+    "id": "P02",
+    "kind": "rule",
+    "prompt_file": "P02/prompt.md",
+    "grader": "P02/grade.py",
+    "output_file": "out/order_totals.csv",
+    "depends_on": {
+      "file": "CLAUDE.md",
+      "quote": "Money columns end in `_ct` and hold whole cents."
+    }
+  },
+  {
+    "id": "P03",
+    "kind": "rule",
+    "prompt_file": "P03/prompt.md",
+    "grader": "P03/grade.py",
+    "output_file": "out/shipments_export.csv",
+    "depends_on": {
+      "file": "CLAUDE.md",
+      "quote": "Timestamps in exported files are integer epoch milliseconds in UTC."
+    }
+  },
+  {
+    "id": "P04",
+    "kind": "rule",
+    "prompt_file": "P04/prompt.md",
+    "grader": "P04/grade.py",
+    "output_file": "out/ledger_export.csv",
+    "depends_on": {
+      "file": "CLAUDE.md",
+      "quote": "Exports sort their rows by `ledger_id` in ascending order before the file is written."
+    }
+  },
+  {
+    "id": "P05",
+    "kind": "rule",
+    "prompt_file": "P05/prompt.md",
+    "grader": "P05/grade.py",
+    "output_file": "out/backfill_plan.md",
+    "depends_on": {
+      "file": "CLAUDE.md",
+      "quote": "A backfill runs in this order: freeze the partition, copy it, validate it, publish it."
+    }
+  },
+  {
+    "id": "P06",
+    "kind": "rule",
+    "prompt_file": "P06/prompt.md",
+    "grader": "P06/grade.py",
+    "output_file": "out/run_manifest.json",
+    "depends_on": {
+      "file": "CLAUDE.md",
+      "quote": "Dates in run manifests are written as `YYYYMMDD` with no separators."
+    }
+  },
+  {
+    "id": "P07",
+    "kind": "rule",
+    "prompt_file": "P07/prompt.md",
+    "grader": "P07/grade.py",
+    "output_file": "out/partition_path.txt",
+    "depends_on": {
+      "file": "memory/partition-layout.md",
+      "quote": "Partition directories are named with the key `load_date` followed by the date."
+    }
+  },
+  {
+    "id": "P08",
+    "kind": "rule",
+    "prompt_file": "P08/prompt.md",
+    "grader": "P08/grade.py",
+    "output_file": "out/discounts_export.csv",
+    "depends_on": {
+      "file": "memory/partition-layout.md",
+      "quote": "Exported CSV rows write a missing value as `-na-`."
+    }
+  },
+  {
+    "id": "P09",
+    "kind": "rule",
+    "prompt_file": "P09/prompt.md",
+    "grader": "P09/grade.py",
+    "output_file": "out/manifest.json",
+    "depends_on": {
+      "file": "memory/partition-layout.md",
+      "quote": "Each partition manifest records its row count under the key `row_count_v2`."
+    }
+  },
+  {
+    "id": "P10",
+    "kind": "rule",
+    "prompt_file": "P10/prompt.md",
+    "grader": "P10/grade.py",
+    "output_file": "out/main_partition.csv",
+    "depends_on": {
+      "file": "memory/partition-layout.md",
+      "quote": "A record whose event date is more than three days before its arrival day goes to `late/<source>/` and never to the main partition."
+    }
+  },
+  {
+    "id": "P11",
+    "kind": "routing",
+    "prompt_file": "P11/prompt.md",
+    "grader": "P11/grade.py",
+    "output_file": "out/routed.txt",
+    "depends_on": {
+      "file": "skills/schema-drift-check/SKILL.md",
+      "quote": "Compare the schema that an incoming source delivers with the schema registered for the destination table, and list every added, removed, renamed or retyped column."
+    }
+  },
+  {
+    "id": "P12",
+    "kind": "routing",
+    "prompt_file": "P12/prompt.md",
+    "grader": "P12/grade.py",
+    "output_file": "out/routed.txt",
+    "depends_on": {
+      "file": "skills/scd-history-design/SKILL.md",
+      "quote": "Design slowly changing dimension history tables for a dimension whose past values must be kept, including validity start and end columns, a current row indicator and the merge logic that closes superseded rows and opens new ones."
+    }
+  },
+  {
+    "id": "P13",
+    "kind": "routing",
+    "prompt_file": "P13/prompt.md",
+    "grader": "P13/grade.py",
+    "output_file": "out/routed.txt",
+    "depends_on": {
+      "file": "skills/dq-expectation-writer/SKILL.md",
+      "quote": "Write declarative data quality expectations for a table, such as not null checks on keys, uniqueness of identifiers, accepted value ranges and bounds on daily row counts, and give each expectation a severity."
+    }
+  },
+  {
+    "id": "P14",
+    "kind": "routing",
+    "prompt_file": "P14/prompt.md",
+    "grader": "P14/grade.py",
+    "output_file": "out/routed.txt",
+    "depends_on": {
+      "file": "skills/pipeline-postmortem/SKILL.md",
+      "quote": "Draft a postmortem for a data pipeline incident, with a timeline reconstructed from run logs, the partner and analyst impact, the root cause and a list of follow up actions with named owners."
+    }
+  },
+  {
+    "id": "P15",
+    "kind": "ondemand",
+    "prompt_file": "P15/prompt.md",
+    "grader": "P15/grade.py",
+    "output_file": "out/ticket.md",
+    "depends_on": {
+      "file": "CLAUDE.md",
+      "quote": "When you are asked to rotate a partner export signing key, read `ondemand/key-rotation.md`, in the folder that holds this file, first."
+    }
+  }
+]

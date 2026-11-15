@@ -1,0 +1,97 @@
+ts=2026-05-02T08:00:40Z method=GET route=/healthz status=200 ms=22 req=90225
+req=54537 ms=12 route=/healthz ts=2026-05-02T08:00:59Z method=POST status=404
+ts=2026-05-02T08:01:16Z method=GET route=/healthz status=201 ms=15 req=69559
+method=POST ms=17 ts=2026-05-02T08:01:26Z req=13244 status=200 route=/healthz
+ts=2026-05-02T08:02:05Z method=GET route=/healthz status=200 ms=4 req=72432
+ts=2026-05-02T08:02:34Z method=GET route=/healthz status=200 ms=20 req=98080
+ts=2026-05-02T08:03:10Z method=GET route=/healthz status=503 ms=20 req=66382
+ts=2026-05-02T09:00:00Z method=GET route=/v1/orders status=200
+ts=2026-05-02T08:03:32Z method=GET route=/healthz status=200 ms=15 req=62147
+req=79256 ts=2026-05-02T08:03:48Z method=POST ms=18 status=404 route=/healthz
+route=/healthz ts=2026-05-02T08:04:03Z status=404 req=71766 method=GET ms=11
+ts=2026-05-02T08:04:24Z method=GET route=/healthz status=200 ms=21 req=47984
+
+ts=2026-05-02T08:04:49Z method=GET route=/healthz status=404 ms=22 req=35916
+ts=2026-05-02T08:05:24Z method=GET route=/healthz status=200 ms=23 req=28084
+req=61632 route=/healthz ms=14 method=GET ts=2026-05-02T08:06:00Z status=200
+ts=2026-05-02T08:06:05Z method=POST route=/healthz status=200 ms=21 req=44998
+ts=2026-05-02T08:06:29Z method=POST route=/healthz status=200 ms=6 req=99524
+req=59217 ts=2026-05-02T08:06:37Z status=503 method=POST route=/healthz ms=8
+req=97548 route=/healthz ts=2026-05-02T08:07:16Z status=200 ms=18 method=GET
+ts=2026-05-02T09:01:00Z method=GET route=/v1/search status=200 ms=12.5
+ts=2026-05-02T08:07:23Z method=GET route=/healthz status=503 ms=14 req=62786
+ts=2026-05-02T08:07:49Z method=GET route=/healthz status=503 ms=23 req=13641
+ts=2026-05-02T08:08:11Z method=POST route=/healthz status=200 ms=7 req=99981
+ts=2026-05-02T08:08:12Z method=GET route=/healthz status=200 ms=7 req=36990
+ts=2026-05-02T08:08:29Z method=GET route=/v1/orders status=200 ms=380 req=62525
+ts=2026-05-02T08:09:06Z method=POST route=/v1/orders status=200 ms=439 req=31620
+ts=2026-05-02T08:09:18Z method=GET route=/v1/orders status=500 ms=293 req=36913
+ts=2026-05-02T08:09:34Z method=POST route=/v1/orders status=500 ms=141 req=43727
+ts=2026-05-02T08:09:47Z method=GET route=/v1/orders status=200 ms=375 req=88998
+ts=2026-05-02T08:10:06Z method=GET route=/v1/orders status=404 ms=56 req=96539
+ts=2026-05-02T08:10:13Z method=GET route=/v1/orders status=200 ms=493 req=34218
+ts=2026-05-02T08:10:14Z method=GET route=/v1/orders status=404 ms=632 req=20020
+ts=2026-05-02T08:10:20Z method=GET route=/v1/orders status=404 ms=418 req=41597
+ts=2026-05-02T09:02:00Z method=POST route=/v1/users status=500 ms=-4
+ts=2026-05-02T08:10:21Z method=POST route=/v1/orders status=200 ms=625 req=15794
+ts=2026-05-02T08:10:30Z ms=80 method=GET route=/v1/orders status=404 req=10592
+ts=2026-05-02T08:10:32Z method=GET route=/v1/orders status=404 ms=136 req=60022
+route=/v1/orders req=14121 status=201 ts=2026-05-02T08:11:03Z ms=211 method=GET
+ts=2026-05-02T08:11:34Z status=200 route=/v1/orders ms=203 method=GET req=25482
+method=GET route=/v1/orders ms=479 ts=2026-05-02T08:11:51Z status=503 req=89917
+ts=2026-05-02T08:12:14Z method=GET route=/v1/orders status=200 ms=583 req=11022
+route=/v1/orders ts=2026-05-02T08:12:51Z ms=573 status=503 method=GET req=17275
+ts=2026-05-02T08:12:52Z method=GET route=/v1/orders status=200 ms=397 req=45731
+req=47368 status=201 ts=2026-05-02T08:13:18Z ms=93 method=GET route=/v1/orders
+ts=2026-05-02T08:13:24Z method=GET route=/v1/orders status=500 ms=329 req=69696
+ts=2026-05-02T08:13:33Z method=POST route=/v1/orders status=200 ms=86 req=72294
+ts=2026-05-02T08:14:08Z method=GET route=/v1/orders status=201 ms=376 req=63077
+status=500 ms=618 ts=2026-05-02T08:14:14Z req=15058 method=GET route=/v1/search
+ts=2026-05-02T09:03:00Z method=GET status=200 ms=44
+ts=2026-05-02T08:14:35Z method=GET route=/v1/search status=500 ms=401 req=41088
+ts=2026-05-02T08:14:52Z method=GET route=/v1/search status=200 ms=412 req=45492
+ts=2026-05-02T08:15:14Z method=GET route=/v1/search status=500 ms=872 req=27543
+ts=2026-05-02T08:15:49Z method=POST route=/v1/search status=503 ms=552 req=50211
+method=GET route=/v1/search status=200 req=79545 ms=890 ts=2026-05-02T08:16:09Z
+
+ts=2026-05-02T08:16:21Z method=GET route=/v1/search status=200 ms=641 req=37821
+method=GET route=/v1/search req=28162 ms=263 ts=2026-05-02T08:16:28Z status=200
+ts=2026-05-02T08:16:59Z method=GET route=/v1/search status=404 ms=668 req=20358
+ts=2026-05-02T08:17:06Z method=GET route=/v1/search status=201 ms=726 req=33389
+ts=2026-05-02T08:17:32Z method=POST route=/v1/search status=404 ms=632 req=32511
+ts=2026-05-02T08:17:42Z method=POST route=/v1/search status=200 ms=553 req=87923
+req=28013 ms=748 ts=2026-05-02T08:17:57Z method=POST route=/v1/search status=200
+ts=2026-05-02T09:04:00Z method=GET route=/healthz status=200 ms=n/a
+status=500 route=/v1/search ms=500 req=42726 method=GET ts=2026-05-02T08:18:06Z
+ts=2026-05-02T08:18:39Z method=POST route=/v1/search status=200 ms=682 req=79129
+route=/v1/search req=98063 method=GET ts=2026-05-02T08:19:06Z status=201 ms=764
+ts=2026-05-02T08:19:46Z method=GET route=/v1/search status=201 ms=634 req=20947
+ts=2026-05-02T08:20:19Z method=GET route=/v1/search status=200 ms=311 req=44607
+ts=2026-05-02T08:20:22Z method=POST route=/v1/search status=500 ms=745 req=20605
+ts=2026-05-02T08:20:44Z method=GET route=/v1/search status=200 ms=654 req=26536
+ts=2026-05-02T08:21:09Z method=GET route=/v1/search status=200 ms=757 req=51790
+ts=2026-05-02T08:21:45Z method=GET route=/v1/search status=503 ms=438 req=57625
+ms=253 route=/v1/users method=GET ts=2026-05-02T08:22:13Z req=99889 status=500
+route=/v1/users ts=2026-05-02T08:22:18Z ms=268 status=200 method=POST req=11115
+ts=2026-05-02T08:22:22Z method=POST route=/v1/users status=503 ms=171 req=44484
+ts=2026-05-02T09:05:00Z method=GET route=/v1/users status=200 ms=
+ts=2026-05-02T08:22:49Z method=GET route=/v1/users status=200 ms=203 req=52291
+method=POST ms=281 status=201 req=21864 route=/v1/users ts=2026-05-02T08:23:20Z
+ts=2026-05-02T08:23:25Z method=POST route=/v1/users status=200 ms=214 req=71636
+
+req=49952 ts=2026-05-02T08:23:43Z status=503 ms=205 method=GET route=/v1/users
+ts=2026-05-02T08:23:59Z method=GET route=/v1/users status=404 ms=283 req=36195
+ts=2026-05-02T08:24:12Z method=GET route=/v1/users status=503 ms=305 req=36326
+ms=158 ts=2026-05-02T08:24:45Z req=81783 status=500 method=POST route=/v1/users
+ts=2026-05-02T08:25:08Z method=GET route=/v1/users status=404 ms=263 req=39456
+method=POST req=45699 ts=2026-05-02T08:25:20Z ms=54 route=/v1/users status=200
+ts=2026-05-02T08:25:57Z method=GET route=/v1/users status=500 ms=205 req=36259
+req=31781 ms=279 route=/v1/users ts=2026-05-02T08:26:11Z status=200 method=POST
+ts=2026-05-02T08:26:49Z ms=240 req=59910 method=GET route=/v1/users status=201
+ts=2026-05-02T08:27:25Z method=GET route=/v1/users status=200 ms=304 req=13309
+method=GET status=200 req=85955 ts=2026-05-02T08:27:50Z ms=258 route=/v1/users
+ts=2026-05-02T08:28:15Z method=GET route=/v1/users status=404 ms=187 req=71801
+ts=2026-05-02T08:28:29Z method=GET route=/v1/users status=503 ms=283 req=22896
+ts=2026-05-02T08:28:49Z method=GET route=/v1/users status=200 ms=245 req=11062
+ts=2026-05-02T08:29:25Z method=GET route=/v1/users status=500 ms=249 req=99310
+ts=2026-05-02T08:29:46Z method=GET route=/v1/users status=503 ms=88 req=92603

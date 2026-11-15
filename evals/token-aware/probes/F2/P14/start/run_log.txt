@@ -1,0 +1,6 @@
+2026-10-16 02:05 storefront extract started for 2026-10-15
+2026-10-16 02:21 extract finished, 18412 rows written
+2026-10-16 02:23 partner export generated, 18205 rows, checksum ok
+2026-10-16 06:40 partner reports 207 rows missing from the storefront file
+2026-10-16 07:10 load reversed on request of the platform lead
+2026-10-16 07:32 partner export regenerated, 18412 rows

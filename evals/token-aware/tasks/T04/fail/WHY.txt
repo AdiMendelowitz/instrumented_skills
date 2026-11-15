@@ -1,0 +1,1 @@
+invoice_fmt.discount_label was left on float round, so 0.0625 gives "6.2% off" instead of "6.3% off"; the report module was fixed.

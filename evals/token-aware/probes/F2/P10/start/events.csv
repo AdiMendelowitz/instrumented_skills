@@ -1,0 +1,7 @@
+event_id,event_date,arrival_date,status
+E1,2026-10-16,2026-10-16,delivered
+E2,2026-10-15,2026-10-16,in_transit
+E3,2026-10-13,2026-10-16,delivered
+E4,2026-10-12,2026-10-16,delivered
+E5,2026-10-09,2026-10-16,delivered
+E6,2026-10-14,2026-10-16,delivered

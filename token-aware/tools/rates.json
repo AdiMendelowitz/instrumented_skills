@@ -1,20 +1,88 @@
 {
-  "_comment": "TEMPLATE, INTENTIONALLY ALREADY EXPIRED. Every rate below is a placeholder (0.0), and 'expires' is set in the past on purpose so cost.py's own loader refuses to compute anything until you replace these values. That refusal is the intended first-run experience, not a bug. Verify every figure against the pricing and prompt-caching pages, then set verified/expires/source and a dated provenance entry per fact. cost.py warns on any fact older than 30 days and refuses past 90.",
-  "verified": "2020-01-01",
-  "expires": "2020-01-08",
+  "placeholder": "Template only. Fill in every null price from the first-party pricing page named in 'source', then set 'verified' to that date and 'expires' to a date within 30 days. This shipped copy is deliberately expired, so cost.py refuses to compute until you do.",
+  "verified": "2000-01-01",
+  "expires": "2000-01-01",
   "source": "https://platform.claude.com/docs/en/about-claude/pricing",
   "units": "USD per million tokens",
   "models": {
-    "<model-id>": {
-      "in": 0.0,
-      "out": 0.0,
-      "cache_min_tokens": 0,
-      "cache_read_mult": 0.1,
+    "claude-opus-5-5": {
+      "in": null,
+      "out": null,
+      "cache_min_tokens": 512,
+      "cache_read_mult": 0.05,
       "tokenizer_factor": 1.3,
       "tool_overhead": {
-        "auto": 0,
-        "any": 0
+        "auto": 286
+      },
+      "note": "pricing page lists no any/tool overhead for this model; key omitted rather than guessed. Fast mode 8.0/40.0 not modelled."
+    },
+    "claude-opus-5": {
+      "in": null,
+      "out": null,
+      "cache_min_tokens": 512,
+      "tokenizer_factor": 1.3,
+      "tool_overhead": {
+        "auto": 286,
+        "any": 406
       }
+    },
+    "claude-sonnet-5": {
+      "in": null,
+      "out": null,
+      "cache_min_tokens": 1024,
+      "tokenizer_factor": 1.3,
+      "tool_overhead": {
+        "auto": 354,
+        "any": 474
+      }
+    },
+    "claude-sonnet-5-5": {
+      "in": null,
+      "out": null,
+      "cache_min_tokens": 512,
+      "cache_read_mult": 0.05,
+      "tokenizer_factor": 1.3,
+      "tool_overhead": {
+        "auto": 286
+      },
+      "note": "added 2026-10-01; re-verified 2026-10-18 against the pricing, prompt-caching and models-overview pages: cache hits are 0.05x (caching page footnote 2, pricing page), tool overhead auto/none 286 tokens is on the pricing page; the page lists no any/tool figure, key omitted rather than guessed."
+    },
+    "claude-haiku-4-5-20251001": {
+      "in": null,
+      "out": null,
+      "cache_min_tokens": 4096,
+      "tokenizer_factor": 1.0,
+      "tool_overhead": {
+        "auto": 496,
+        "any": 588
+      },
+      "region_us": false
+    },
+    "claude-fable-5": {
+      "in": null,
+      "out": null,
+      "cache_min_tokens": 512,
+      "tokenizer_factor": 1.3,
+      "note": "tool-use overhead not listed for this model; key omitted rather than guessed"
+    },
+    "claude-fable-5-1": {
+      "in": null,
+      "out": null,
+      "cache_min_tokens": 512,
+      "cache_read_mult": 0.025,
+      "tokenizer_factor": 1.3,
+      "note": "added 2026-10-01; re-verified 2026-10-18 (ID claude-fable-5-1 on the models overview page, 10.0/50.0, cache hits 0.025x); tool-use overhead not listed, key omitted rather than guessed."
+    },
+    "claude-haiku-5-5": {
+      "in": null,
+      "out": null,
+      "cache_min_tokens": 512,
+      "tokenizer_factor": 1.3,
+      "tool_overhead": {
+        "auto": 286,
+        "any": 406
+      },
+      "note": "added 2026-10-18 from the pricing, prompt-caching and models-overview pages (ID claude-haiku-5-5). Prices are the tier for prompts up to 100,000 tokens (in 0.10, out 0.50, cache hit 0.1x = 0.01). A request whose prompt is over 100,000 tokens, counting cache reads and writes, pays in 0.50, out 2.50 and cache hit 0.05; that tier is not modelled, so such a request fails the 1 per cent cost assertion rather than being mispriced silently. The any/tool figure 406 sits in an unnamed row directly under the Haiku 5.5 row of the tool-overhead table and is read as belonging to it, as in the model pricing table. Cache hits use the table default 0.1x (the caching page names no exception). tokenizer_factor 1.3 follows the page statement for Claude 4.7 and later."
     }
   },
   "multipliers": {
@@ -25,52 +93,55 @@
     "region_us_only": 1.1
   },
   "modifiers": {
-    "long_context_surcharge": null
+    "long_context_surcharge": 1.0
   },
   "notes": {
-    "cache_read_mult": "Per-model cache-hit multiplier; omit the key to use multipliers.cache_read. Some models list their own (check the prompt-caching page).",
-    "tokenizer_factor": "Tokens per previous-generation token. Anthropic documents ~30% more tokens for Claude 4.7 and later (1.3); use 1.0 for earlier models. Omitted keys default to 1.3, the conservative direction.",
-    "tool_overhead": "System-prompt tokens added to every tool-enabled request: 'auto' for tool_choice auto/none, 'any' for any/tool. Omit a key the pricing page does not list; cost.py raises rather than assuming zero.",
-    "region_us_only": "Data-residency multiplier on every token category where the provider charges one. Confirm on the pricing page.",
-    "long_context_surcharge": "1.0 where the full context window bills at standard rates. Leave null until confirmed; a null modifier is excluded and named in every output.",
-    "cache_min_tokens": "Omit the key for any model whose minimum is neither documented nor measured; a guess must never be readable as fact.",
-    "region_us": "Set \"region_us\": false on a model where data-residency pricing does not apply (Anthropic lists it for Claude 4.6 and later); cost.py then raises rather than pricing region 'us'."
+    "region_us_only": "inference_geo='us' applies 1.1x to input, output, cache writes and cache reads on Claude 4.6 and later. Global routing is the default and is standard-priced.",
+    "long_context_surcharge": "Claude 4.6 and later models except Claude Haiku 5.5 include the full 1M context window at standard pricing: a 900k request bills at the same per-token rate as a 9k one. No threshold, hence 1.0. Claude Haiku 5.5 is priced by prompt length (over 100,000 tokens pays higher prices); see its model note, only the lower tier is modelled.",
+    "tool_overhead": "Tokens added to every tool-enabled request by the automatic tool-use system prompt. 'auto' covers tool_choice auto and none; 'any' covers any and tool. Tool definitions and tool_result blocks bill on top of this.",
+    "cache_read_mult": "Per-model cache-hit multiplier where the caching page lists an exception: Opus 5.5 and Sonnet 5.5 0.05x, Fable 5.1 and Mythos 5.1 0.025x. Others use multipliers.cache_read.",
+    "tokenizer_factor": "Claude 4.7 and later use a tokenizer producing approximately 30% more tokens for the same text; 1.0 for earlier models such as Haiku 4.5.",
+    "not_added": "Mythos 5.1 and Mythos 5 are priced on the pricing page (10.0/50.0 as recorded on 2026-10-01) but are invitation only with no public API model ID, so they stay out of the table. Fable 5.1 was added on 2026-10-01 with its ID confirmed on the models overview page and re-verified on 2026-10-18.",
+    "fast_mode": "Opus 5.5 fast mode is 8.0/40.0; Opus 5 and Opus 4.8 fast mode is 10.0/50.0. Not modelled; add a model entry if you adopt it.",
+    "server_tools": "Web search bills $10 per 1,000 searches; code execution has 1,550 free hours a month per organisation, then $0.05 per container-hour.",
+    "subscription": "Claude Max and other subscription sessions are not billed per token; figures for them are list-price comparisons, never spend.",
+    "region_us": "inference_geo 'us' pricing applies to Claude 4.6 and later only; models marked region_us false raise rather than price it."
   },
   "provenance": {
     "models.rates": {
-      "class": "unverified",
-      "url": "",
-      "date": ""
+      "class": "first-party",
+      "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "date": "2000-01-01"
     },
     "models.cache_min_tokens": {
-      "class": "unverified",
-      "url": "",
-      "date": ""
+      "class": "first-party",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching",
+      "date": "2000-01-01"
     },
     "models.cache_read_mult": {
-      "class": "unverified",
-      "url": "",
-      "date": ""
-    },
-    "models.tokenizer_factor": {
-      "class": "unverified",
-      "url": "",
-      "date": ""
+      "class": "first-party",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching",
+      "date": "2000-01-01"
     },
     "models.tool_overhead": {
-      "class": "unverified",
-      "url": "",
-      "date": ""
+      "class": "first-party",
+      "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "date": "2000-01-01"
+    },
+    "models.tokenizer_factor": {
+      "class": "first-party",
+      "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "date": "2000-01-01"
     },
     "multipliers": {
-      "class": "unverified",
-      "url": "",
-      "date": ""
+      "class": "first-party",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching",
+      "date": "2000-01-01"
     },
-    "modifiers": {
-      "class": "unverified",
-      "url": "",
-      "date": ""
+    "modifiers.long_context_surcharge": {
+      "class": "first-party",
+      "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "date": "2000-01-01"
     }
   }
 }

@@ -1,0 +1,9 @@
+# Pinned runtime dependencies for the reporting jobs.
+# Regenerate with the lock script after editing.
+pandas==2.2.3
+pandas==2.2.3 ; python_version < "3.9"
+pyarrow==16.1.0
+requests==2.32.3
+tomli==2.0.1 ; python_version < "3.11"
+sqlalchemy==2.0.30
+pydantic==2.8.2

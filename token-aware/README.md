@@ -160,3 +160,17 @@ metrics with no currency conversion applied, for surfaces (like a Max-style subs
 where no per-call dollar figure is ever billed. This is the one place the two skills
 share data, and it's read-only in this direction: `critique` logs raw counters,
 `token-aware` is the only place that converts anything to cost.
+
+## Evaluation
+
+Paths below are relative to the repository root. Version 2.6.0 is the release of the skill tree that was evaluated in a pre-registered experiment (the evaluated `SKILL.md` header reads v2.5.1), with four changes and no others: this section appended to the README, the version line in `token-aware/SKILL.md`, a placeholder `token-aware/tools/rates.json` (fill every null price from the pricing page named in its `source` field, then set `verified` to that date and `expires` to a date within 30 days, since `token-aware/tools/cost.py` refuses to compute until you do), and a redaction step for personal paths that found none to change in this tree. `evals/tools/diff_scope_test.py` enforced that limit before release.
+
+The tree as measured (md5 93263e8f72992caf8379cada56f01e04) is published unchanged under `evals/k1-tree/`, and the full evaluation package (pre-registration, tasks, fixtures, harness, analysis script and the run records) is under `evals/token-aware/`, with every figure of the write-up in `evals/numbers/numbers.json`. The CI workflow reruns the analysis on the published records and fails unless its output is byte-identical to the published results.
+
+The measured result was negative. Against having no token skill installed, the evaluated tree showed no measurable saving, and forcing the skill to load, measured on the earlier K0 version, raised the cost per successful task by about a third. Behaviour inside Cowork was not tested. Read `evals/token-aware/final.md` and the data card there before relying on any figure.
+
+Two reference files are published exactly as evaluated and are not maintained. `token-aware/references/pricing.md` carries the evaluated tree's rate snapshot, read from the pricing page on 2026-10-18 and marked to expire on 2026-11-17: treat every price in it as historical, and take current prices from the pricing page into `token-aware/tools/rates.json` as described above. `token-aware/references/search_policy.md` cites a `kb-search-integration-plan` document that is not part of this repository.
+
+The evaluation data is licensed under CC BY 4.0 (`evals/token-aware/LICENSE-DATA.md`); the code is under the repository's MIT licence.
+
+The text above this section was written for v2.5.1 and is kept byte for byte. Its statements that differ in v2.6.0: `token-aware/tools/` also holds `context_payload.py` and `test_context_payload.py`, and `token-aware/references/` also holds `context_audit.md`, none of which the reference list or the Install listing names; the test suite has 117 tests (96 in `test_cost.py`, 21 in `test_context_payload.py`); and the CI workflow runs them on Python 3.13, so the "tested on Python 3.14" statements were not re-verified for this version.

@@ -1,0 +1,1 @@
+Write a Python script in exports/ that reads orders.csv from the working directory and writes out/orders_export.csv with the columns order_id, sku and qty, keeping every row. Run the script so the output file exists.

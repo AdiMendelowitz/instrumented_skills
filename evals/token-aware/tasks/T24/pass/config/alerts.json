@@ -1,0 +1,34 @@
+{
+  "version": 3,
+  "alerts": [
+    {
+      "name": "ingest_lag_minutes",
+      "metric": "ingest.lag.minutes",
+      "threshold": 30,
+      "severity": "critical",
+      "notify": [
+        "#data-oncall",
+        "email:dq-oncall@brindle.example"
+      ]
+    },
+    {
+      "name": "export_lag_minutes",
+      "metric": "export.lag.minutes",
+      "threshold": 15,
+      "severity": "warning",
+      "notify": [
+        "#data-oncall"
+      ]
+    },
+    {
+      "name": "row_count_drop_pct",
+      "metric": "load.rows.drop_pct",
+      "threshold": 20,
+      "severity": "critical",
+      "notify": [
+        "#data-oncall",
+        "email:dq-team@brindle.example"
+      ]
+    }
+  ]
+}

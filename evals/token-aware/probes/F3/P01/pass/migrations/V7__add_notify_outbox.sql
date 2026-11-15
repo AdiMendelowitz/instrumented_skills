@@ -1,0 +1,1 @@
+CREATE TABLE notify_outbox (id BIGINT PRIMARY KEY, payload TEXT NOT NULL);

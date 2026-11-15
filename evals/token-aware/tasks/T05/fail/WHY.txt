@@ -1,0 +1,1 @@
+The regions are trimmed and case-folded, but the result is sorted by name instead of kept in first-appearance order, so test_order_is_first_appearance_not_sorted fails.

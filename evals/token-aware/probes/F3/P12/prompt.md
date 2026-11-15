@@ -1,0 +1,1 @@
+Our team wants to ship the new invoice PDF layout gradually, starting with a few accounts, behind a flag. Plan the staged rollout: percentage steps, the account group for each step, what to watch between steps and how to switch it off. Save the plan to out/answer.md.

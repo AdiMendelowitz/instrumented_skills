@@ -1,9 +1,9 @@
 ---
 name: token-aware
-description: Reduce LLM cost in prompts, pipelines, and code that calls an LLM, measure actual spend against estimates, and author cost-aware prompts for other Claude surfaces to run. Use for token or cost audits, metering or pricing a session, model routing, prompt caching, batching, replacing an LLM call with deterministic code, or writing an instruction file that will execute elsewhere. Not for general code or performance optimisation.
+description: "Reduce LLM cost in prompts, pipelines and LLM-calling code, and measure spend against estimates. Use for token or cost audits, metering a session, model routing, prompt caching, batching, replacing an LLM call with code, or writing an instruction file that runs elsewhere. Not for general performance work. Also use for context audits: shortening a CLAUDE.md, its imports, memory files or skill descriptions to cut startup context without changing behaviour."
 ---
 
-# Token-Aware Prompting and Code Generation | v2.5.1 | 2026-09-29
+# Token-Aware Prompting and Code Generation | v2.6.0 | 2026-11-11
 
 ## Core principle
 
@@ -20,6 +20,7 @@ Applies in two directions: prompts written for Claude Code, and Python that Clau
 - `references/python_replacements.md`: REPLACE patterns with worked code
 - `references/module_layout.md`: prompt builders, token estimation, module structure
 - `references/audit_workflow.md`: auditing an existing codebase, report template
+- `references/context_audit.md`: context audits: measuring and shortening a `CLAUDE.md`, its imports, memory files and skill descriptions with `tools/context_payload.py`; load when asked to cut startup context without changing behaviour
 - `references/search_policy.md`: canonical layer order for retrieval (grep, then kb-search, then a code-graph tool); `kb-search` treats this file as a hard dependency, so keep it here even as this skill's own content evolves
 
 The Python-first rule and the code review gate live in the project CLAUDE.md for any project that has one. This skill does not restate them; it supplies the reasoning behind them and the audit procedure that enforces them.

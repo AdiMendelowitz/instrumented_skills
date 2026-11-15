@@ -1,0 +1,1 @@
+split_by_weight was fixed to use the largest remainder rule, but split_by_bps still hands the leftover cents to the last entries, so test_largest_remainder_not_last_entry fails (returns [2, 3, 4] instead of [3, 3, 3]).

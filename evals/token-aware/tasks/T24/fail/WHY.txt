@@ -1,0 +1,1 @@
+The export_lag_minutes alert was also changed to a threshold of 30 and given the new channel, though the task left it alone.

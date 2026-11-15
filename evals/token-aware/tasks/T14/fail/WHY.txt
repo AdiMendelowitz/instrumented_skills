@@ -1,0 +1,1 @@
+Duplicates are resolved by keeping the first row seen for each email instead of the row with the latest signup date, so ana.lopez@example.com keeps the 2025-02-03 row (29.90) instead of the 2025-06-20 row (49.00).

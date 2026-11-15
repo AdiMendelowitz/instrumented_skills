@@ -1,0 +1,982 @@
+{
+  "constants": {
+    "alpha": 0.025,
+    "as_target": 0.85,
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 20261025,
+    "chi_square_coverage": 0.8,
+    "claude_version": "2.1.303",
+    "comparator": 0.9,
+    "detection_difference": 0.05,
+    "exclusion_cap": 0,
+    "fixture_count": 2,
+    "harness_md5": "3e896ad21cf33a4c79199d5ca16f966c",
+    "minimum_effect": -0.2231435513142097,
+    "model_id": "claude-sonnet-5-5",
+    "pool_size": 24,
+    "power": 0.8,
+    "preregistered_r": 6,
+    "pricing_md5": "1b03ec48a32b857218a9280e819428d1",
+    "probe_count": 15,
+    "probe_thresholds": {
+      "F2": [
+        0.7111111111111111,
+        0.7333333333333333,
+        0.7777777777777778,
+        0.7555555555555555,
+        0.7333333333333333
+      ],
+      "F3": [
+        1.0,
+        0.9777777777777777,
+        1.0,
+        0.9777777777777777,
+        1.0
+      ]
+    },
+    "quality_margin": 0.1,
+    "repeats": [
+      10
+    ],
+    "runlib_md5": "ce4c6cac89549a1018de1a8d3945179d",
+    "sentinel_divisor": 1.0,
+    "task_count": 12,
+    "unedited_content_tokens": {
+      "F2": 2644,
+      "F3": 2619
+    },
+    "within_resamples": 2000,
+    "within_seed": 20261024,
+    "zero_pass_divisor": 0.5
+  },
+  "context": {
+    "runs": [
+      {
+        "fixture": "F2",
+        "mean": 1856.0,
+        "range": [
+          1856,
+          1856
+        ],
+        "run_id": "20261110T134835-43bce101-0001",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 2204.0,
+        "range": [
+          2204,
+          2204
+        ],
+        "run_id": "20261110T134835-43bce101-0062",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 2184.0,
+        "range": [
+          2184,
+          2184
+        ],
+        "run_id": "20261110T134835-43bce101-0123",
+        "scored_at_unedited_size": true
+      },
+      {
+        "fixture": "F2",
+        "mean": 1823.0,
+        "range": [
+          1823,
+          1823
+        ],
+        "run_id": "20261110T134835-43bce101-0229",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1830.0,
+        "range": [
+          1830,
+          1830
+        ],
+        "run_id": "20261110T134835-43bce101-0290",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1840.0,
+        "range": [
+          1840,
+          1840
+        ],
+        "run_id": "20261110T134835-43bce101-0351",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1715.0,
+        "range": [
+          1715,
+          1715
+        ],
+        "run_id": "20261110T134835-43bce101-0412",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1881.0,
+        "range": [
+          1881,
+          1881
+        ],
+        "run_id": "20261110T134835-43bce101-0473",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1918.0,
+        "range": [
+          1918,
+          1918
+        ],
+        "run_id": "20261110T134835-43bce101-0534",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1935.0,
+        "range": [
+          1935,
+          1935
+        ],
+        "run_id": "20261110T134835-43bce101-0595",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1790.0,
+        "range": [
+          1790,
+          1790
+        ],
+        "run_id": "20261110T134835-43bce101-0656",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1961.0,
+        "range": [
+          1961,
+          1961
+        ],
+        "run_id": "20261110T134835-43bce101-0717",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1910.0,
+        "range": [
+          1910,
+          1910
+        ],
+        "run_id": "20261110T134835-43bce101-0778",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 2018.0,
+        "range": [
+          2018,
+          2018
+        ],
+        "run_id": "20261110T134835-43bce101-0884",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1775.0,
+        "range": [
+          1775,
+          1775
+        ],
+        "run_id": "20261110T134835-43bce101-0945",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1843.0,
+        "range": [
+          1843,
+          1843
+        ],
+        "run_id": "20261110T134835-43bce101-1006",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1858.0,
+        "range": [
+          1858,
+          1858
+        ],
+        "run_id": "20261110T134835-43bce101-1067",
+        "scored_at_unedited_size": false
+      },
+      {
+        "fixture": "F2",
+        "mean": 1801.0,
+        "range": [
+          1801,
+          1801
+        ],
+        "run_id": "20261110T134835-43bce101-1128",
+        "scored_at_unedited_size": false
+      }
+    ],
+    "share_scored_at_unedited_size": 0.05555555555555555,
+    "skipped_without_threshold": {},
+    "verdicts": {
+      "F2": {
+        "label": "gating",
+        "rule4": {
+          "df": 6.42708360897882,
+          "p": 0.972266204487807,
+          "pass_test": false,
+          "t": 2.334549338108878
+        },
+        "trigger": {
+          "interval": [
+            0.5407418735600995,
+            1.0
+          ],
+          "k": 6,
+          "r": 6
+        }
+      }
+    }
+  },
+  "descriptive": {
+    "K0/claude-sonnet-5-5": {
+      "cache_read_share": 0.9570651764427691,
+      "cost_all": 2.8944794000000003,
+      "cost_passing": 2.8944794000000003,
+      "success_rate": 1.0,
+      "tokens": {
+        "cache_creation_input_tokens": 217365,
+        "cache_read_input_tokens": 4865014,
+        "input_tokens": 884,
+        "output_tokens": 153675
+      },
+      "trigger_rate": 0.0,
+      "uncached_equivalent_cost": 11.703275999999999
+    },
+    "K0f/claude-sonnet-5-5": {
+      "cache_read_share": 0.9438775274529321,
+      "cost_all": 3.7404106,
+      "cost_passing": 3.7404106,
+      "success_rate": 1.0,
+      "tokens": {
+        "cache_creation_input_tokens": 351439,
+        "cache_read_input_tokens": 5925766,
+        "input_tokens": 904,
+        "output_tokens": 174027
+      },
+      "trigger_rate": 1.0,
+      "uncached_equivalent_cost": 14.296488
+    },
+    "K1/claude-sonnet-5-5": {
+      "cache_read_share": 0.9609875400320256,
+      "cost_all": 2.819246,
+      "cost_passing": 2.819246,
+      "success_rate": 1.0,
+      "tokens": {
+        "cache_creation_input_tokens": 198698,
+        "cache_read_input_tokens": 4916320,
+        "input_tokens": 886,
+        "output_tokens": 153105
+      },
+      "trigger_rate": 0.0,
+      "uncached_equivalent_cost": 11.762858000000003
+    },
+    "K1f/claude-sonnet-5-5": {
+      "cache_read_share": 0.9325806481101752,
+      "cost_all": 4.0400609,
+      "cost_passing": 4.0400609,
+      "success_rate": 1.0,
+      "tokens": {
+        "cache_creation_input_tokens": 426847,
+        "cache_read_input_tokens": 5916909,
+        "input_tokens": 906,
+        "output_tokens": 173917
+      },
+      "trigger_rate": 1.0,
+      "uncached_equivalent_cost": 14.428493999999999
+    },
+    "N/claude-sonnet-5-5": {
+      "cache_read_share": 0.9602888109043097,
+      "cost_all": 2.7323181,
+      "cost_passing": 2.7323181,
+      "success_rate": 1.0,
+      "tokens": {
+        "cache_creation_input_tokens": 191148,
+        "cache_read_input_tokens": 4642861,
+        "input_tokens": 850,
+        "output_tokens": 150174
+      },
+      "trigger_rate": 0.0,
+      "uncached_equivalent_cost": 11.171458000000001
+    }
+  },
+  "flagged_per_batch": {
+    "20261110T105336-5e1fbe43": 0,
+    "20261110T112216-32a63939": 0,
+    "20261110T113939-7d9083c1": 0,
+    "20261110T115023-82cbb735": 0,
+    "20261110T121145-9d35e892": 0,
+    "20261110T122908-e04cc292": 0,
+    "20261110T124535-1aa9e38a": 0,
+    "20261110T130202-f76bd3d2": 0,
+    "20261110T131639-c1bf7327": 0,
+    "20261110T132403-646179e6": 0,
+    "20261110T133132-d35c2b24": 0,
+    "20261110T133920-09e306a9": 0,
+    "20261110T134835-43bce101": 0
+  },
+  "open_point": "Gate S2 says \"probe thresholds with the 1/P allowance\"; this analysis uses the minimum of five unedited scores, with no allowance.",
+  "task_comparisons": {
+    "K0f against K0": {
+      "bootstrap": {
+        "interval": [
+          0.17019266008954492,
+          0.38282285835074903
+        ],
+        "label": "limited: few distinct resamples",
+        "resamples": 10000,
+        "seed": 20261025
+      },
+      "cache_adjusted_sensitivity": {
+        "df": 11,
+        "interval": [
+          0.13144281622309317,
+          0.28850373104345195
+        ],
+        "mean": 0.20997327363327256,
+        "p": 0.9999473032194318,
+        "pass_test": false,
+        "sd": 0.12359805476415966,
+        "se": 0.03567968509470085,
+        "t": 5.884953106395488
+      },
+      "differences": [
+        -0.029605359101033457,
+        0.17336501697354123,
+        0.011602813862285899,
+        0.6504798509497141,
+        0.1672124831117059,
+        0.49614240209948735,
+        0.2268128322661367,
+        0.18709219121877085,
+        0.4111475426409301,
+        0.29553771791481065,
+        0.4456681642962721,
+        0.27725340405490684
+      ],
+      "excluded_task_ids": [],
+      "exclusion": {
+        "df": 11,
+        "interval": [
+          0.15012725154494685,
+          0.4019909251696412
+        ],
+        "mean": 0.27605908835729404,
+        "p": 0.999734132921917,
+        "pass_test": false,
+        "sd": 0.19820246279204942,
+        "se": 0.05721612262351826,
+        "t": 4.82484788726005
+      },
+      "no_pass_cells": 0,
+      "practical_bar": "-0.2231",
+      "practical_pass": false,
+      "primary": {
+        "df": 11,
+        "interval": [
+          0.15012725154494685,
+          0.4019909251696412
+        ],
+        "mean": 0.27605908835729404,
+        "p": 0.999734132921917,
+        "pass_test": false,
+        "sd": 0.19820246279204942,
+        "se": 0.05721612262351826,
+        "t": 4.82484788726005
+      },
+      "quality_guard": {
+        "df": 11,
+        "interval": [
+          0.0,
+          0.0
+        ],
+        "mean": 0.0,
+        "p": 1.0,
+        "pass_test": true,
+        "sd": 0.0,
+        "se": 0.0,
+        "t": null
+      },
+      "rule1_pass": false,
+      "sentinel": {
+        "df": 11,
+        "interval": [
+          0.15012725154494685,
+          0.4019909251696412
+        ],
+        "mean": 0.27605908835729404,
+        "p": 0.999734132921917,
+        "pass_test": false,
+        "sd": 0.19820246279204942,
+        "se": 0.05721612262351826,
+        "t": 4.82484788726005
+      },
+      "success_differences": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "tasks": [
+        "T02",
+        "T04",
+        "T05",
+        "T09",
+        "T11",
+        "T12",
+        "T14",
+        "T15",
+        "T21",
+        "T22",
+        "T23",
+        "T24"
+      ],
+      "zero_pass_note": "one extra passing run on a no-pass task moves the log difference by about 0.69"
+    },
+    "K1 against K0": {
+      "bootstrap": {
+        "interval": [
+          -0.0862660424468661,
+          0.005368848401213771
+        ],
+        "label": "limited: few distinct resamples",
+        "resamples": 10000,
+        "seed": 20261025
+      },
+      "cache_adjusted_sensitivity": {
+        "df": 11,
+        "interval": [
+          -0.06318580045293018,
+          0.02815257997371854
+        ],
+        "mean": -0.017516610239605823,
+        "p": 0.2082706446718333,
+        "pass_test": false,
+        "sd": 0.07187813823034746,
+        "se": 0.02074943122807012,
+        "t": -0.8441971274812153
+      },
+      "differences": [
+        -0.07806381640672688,
+        0.000979429706060131,
+        -0.16851592280831973,
+        0.0363200612949246,
+        -0.025909006810252322,
+        0.10471968121366126,
+        0.03317387229646984,
+        -0.037711970427976915,
+        -0.008197067797805602,
+        -0.16642005286724082,
+        -0.026184489181447113,
+        -0.1323905913073471
+      ],
+      "excluded_task_ids": [],
+      "exclusion": {
+        "df": 11,
+        "interval": [
+          -0.09240970848177249,
+          0.014376396299105712
+        ],
+        "mean": -0.03901665609133339,
+        "p": 0.06802854039548051,
+        "pass_test": false,
+        "sd": 0.08403462339344168,
+        "se": 0.02425870621872619,
+        "t": -1.6083568406139892
+      },
+      "no_pass_cells": 0,
+      "practical_bar": "-0.2231",
+      "practical_pass": false,
+      "primary": {
+        "df": 11,
+        "interval": [
+          -0.09240970848177249,
+          0.014376396299105712
+        ],
+        "mean": -0.03901665609133339,
+        "p": 0.06802854039548051,
+        "pass_test": false,
+        "sd": 0.08403462339344168,
+        "se": 0.02425870621872619,
+        "t": -1.6083568406139892
+      },
+      "quality_guard": {
+        "df": 11,
+        "interval": [
+          0.0,
+          0.0
+        ],
+        "mean": 0.0,
+        "p": 1.0,
+        "pass_test": true,
+        "sd": 0.0,
+        "se": 0.0,
+        "t": null
+      },
+      "rule1_pass": false,
+      "sentinel": {
+        "df": 11,
+        "interval": [
+          -0.09240970848177249,
+          0.014376396299105712
+        ],
+        "mean": -0.03901665609133339,
+        "p": 0.06802854039548051,
+        "pass_test": false,
+        "sd": 0.08403462339344168,
+        "se": 0.02425870621872619,
+        "t": -1.6083568406139892
+      },
+      "success_differences": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "tasks": [
+        "T02",
+        "T04",
+        "T05",
+        "T09",
+        "T11",
+        "T12",
+        "T14",
+        "T15",
+        "T21",
+        "T22",
+        "T23",
+        "T24"
+      ],
+      "zero_pass_note": "one extra passing run on a no-pass task moves the log difference by about 0.69"
+    },
+    "K1 against N": {
+      "bootstrap": {
+        "interval": [
+          -0.058477495301926655,
+          0.061134187292615064
+        ],
+        "label": "limited: few distinct resamples",
+        "resamples": 10000,
+        "seed": 20261025
+      },
+      "cache_adjusted_sensitivity": {
+        "df": 11,
+        "interval": [
+          -0.06692706733082676,
+          0.07788563444403052
+        ],
+        "mean": 0.005479283556601877,
+        "p": 0.5646298215950191,
+        "pass_test": false,
+        "sd": 0.11395940399931156,
+        "se": 0.032897246287845926,
+        "t": 0.16655751392256285
+      },
+      "differences": [
+        0.09430483944619983,
+        0.04043322136562022,
+        -0.01111873649721229,
+        0.09250399602236126,
+        0.021515258892180977,
+        0.13594933074497506,
+        0.03637259362795797,
+        -0.020380793935387942,
+        -0.05884440773304078,
+        0.0992478322564585,
+        -0.286705758422368,
+        -0.050884510618820045
+      ],
+      "excluded_task_ids": [],
+      "exclusion": {
+        "df": 11,
+        "interval": [
+          -0.06328105651571997,
+          0.07867986737387409
+        ],
+        "mean": 0.007699405429077062,
+        "p": 0.5921538260264001,
+        "pass_test": false,
+        "sd": 0.111715216133469,
+        "se": 0.03224940505361778,
+        "t": 0.23874565798271474
+      },
+      "no_pass_cells": 0,
+      "practical_bar": "-0.2231",
+      "practical_pass": false,
+      "primary": {
+        "df": 11,
+        "interval": [
+          -0.06328105651571997,
+          0.07867986737387409
+        ],
+        "mean": 0.007699405429077062,
+        "p": 0.5921538260264001,
+        "pass_test": false,
+        "sd": 0.111715216133469,
+        "se": 0.03224940505361778,
+        "t": 0.23874565798271474
+      },
+      "quality_guard": {
+        "df": 11,
+        "interval": [
+          0.0,
+          0.0
+        ],
+        "mean": 0.0,
+        "p": 1.0,
+        "pass_test": true,
+        "sd": 0.0,
+        "se": 0.0,
+        "t": null
+      },
+      "rule1_pass": false,
+      "sentinel": {
+        "df": 11,
+        "interval": [
+          -0.06328105651571997,
+          0.07867986737387409
+        ],
+        "mean": 0.007699405429077062,
+        "p": 0.5921538260264001,
+        "pass_test": false,
+        "sd": 0.111715216133469,
+        "se": 0.03224940505361778,
+        "t": 0.23874565798271474
+      },
+      "success_differences": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "tasks": [
+        "T02",
+        "T04",
+        "T05",
+        "T09",
+        "T11",
+        "T12",
+        "T14",
+        "T15",
+        "T21",
+        "T22",
+        "T23",
+        "T24"
+      ],
+      "zero_pass_note": "one extra passing run on a no-pass task moves the log difference by about 0.69"
+    },
+    "K1f against K0f": {
+      "bootstrap": {
+        "interval": [
+          -0.009948670095315944,
+          0.12232001096291897
+        ],
+        "label": "limited: few distinct resamples",
+        "resamples": 10000,
+        "seed": 20261025
+      },
+      "cache_adjusted_sensitivity": {
+        "df": 11,
+        "interval": [
+          -0.012265761152183922,
+          0.020165360000663417
+        ],
+        "mean": 0.003949799424239749,
+        "p": 0.6987251931151625,
+        "pass_test": false,
+        "sd": 0.025521457664355436,
+        "se": 0.0073674102263136245,
+        "t": 0.5361177541237689
+      },
+      "differences": [
+        0.23901590897088054,
+        0.34937970845847666,
+        -0.025624452387355667,
+        -0.033912909387742385,
+        0.04234299700774402,
+        0.05106417078478254,
+        0.02374303656656629,
+        0.056058610826551725,
+        -0.04709441597893971,
+        -0.019353379730389975,
+        -0.024823364982466956,
+        -0.03649093536019965
+      ],
+      "excluded_task_ids": [],
+      "exclusion": {
+        "df": 11,
+        "interval": [
+          -0.030231584599805995,
+          0.12594908039779057
+        ],
+        "mean": 0.047858747898992283,
+        "p": 0.8977595748287438,
+        "pass_test": false,
+        "sd": 0.1229053479508551,
+        "se": 0.035479717862135406,
+        "t": 1.3489044102593613
+      },
+      "no_pass_cells": 0,
+      "practical_bar": "-0.2231",
+      "practical_pass": false,
+      "primary": {
+        "df": 11,
+        "interval": [
+          -0.030231584599805995,
+          0.12594908039779057
+        ],
+        "mean": 0.047858747898992283,
+        "p": 0.8977595748287438,
+        "pass_test": false,
+        "sd": 0.1229053479508551,
+        "se": 0.035479717862135406,
+        "t": 1.3489044102593613
+      },
+      "quality_guard": {
+        "df": 11,
+        "interval": [
+          0.0,
+          0.0
+        ],
+        "mean": 0.0,
+        "p": 1.0,
+        "pass_test": true,
+        "sd": 0.0,
+        "se": 0.0,
+        "t": null
+      },
+      "rule1_pass": false,
+      "sentinel": {
+        "df": 11,
+        "interval": [
+          -0.030231584599805995,
+          0.12594908039779057
+        ],
+        "mean": 0.047858747898992283,
+        "p": 0.8977595748287438,
+        "pass_test": false,
+        "sd": 0.1229053479508551,
+        "se": 0.035479717862135406,
+        "t": 1.3489044102593613
+      },
+      "success_differences": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "tasks": [
+        "T02",
+        "T04",
+        "T05",
+        "T09",
+        "T11",
+        "T12",
+        "T14",
+        "T15",
+        "T21",
+        "T22",
+        "T23",
+        "T24"
+      ],
+      "zero_pass_note": "one extra passing run on a no-pass task moves the log difference by about 0.69"
+    },
+    "N against K0": {
+      "bootstrap": {
+        "interval": [
+          -0.11382002102982361,
+          0.027806908523739217
+        ],
+        "label": "limited: few distinct resamples",
+        "resamples": 10000,
+        "seed": 20261025
+      },
+      "cache_adjusted_sensitivity": {
+        "df": 11,
+        "interval": [
+          -0.10995901177473912,
+          0.064548075610296
+        ],
+        "mean": -0.022705468082221552,
+        "p": 0.2891668234911632,
+        "pass_test": false,
+        "sd": 0.13732720561330736,
+        "se": 0.03964294956395105,
+        "t": -0.5727492109433895
+      },
+      "differences": [
+        -0.1723686558529267,
+        -0.03945379165956009,
+        -0.15739718631110744,
+        -0.05618393472743666,
+        -0.0474242657024333,
+        -0.031229649531313797,
+        -0.00319872133148813,
+        -0.017331176492588973,
+        0.05064733993523518,
+        -0.2656678851236993,
+        0.2605212692409209,
+        -0.08150608068852705
+      ],
+      "excluded_task_ids": [],
+      "exclusion": {
+        "df": 11,
+        "interval": [
+          -0.12893636369407052,
+          0.035504240653249634
+        ],
+        "mean": -0.04671606152041045,
+        "p": 0.11852133399577022,
+        "pass_test": false,
+        "sd": 0.12940545294046032,
+        "se": 0.03735613654489011,
+        "t": -1.2505592344720313
+      },
+      "no_pass_cells": 0,
+      "practical_bar": "-0.2231",
+      "practical_pass": false,
+      "primary": {
+        "df": 11,
+        "interval": [
+          -0.12893636369407052,
+          0.035504240653249634
+        ],
+        "mean": -0.04671606152041045,
+        "p": 0.11852133399577022,
+        "pass_test": false,
+        "sd": 0.12940545294046032,
+        "se": 0.03735613654489011,
+        "t": -1.2505592344720313
+      },
+      "quality_guard": {
+        "df": 11,
+        "interval": [
+          0.0,
+          0.0
+        ],
+        "mean": 0.0,
+        "p": 1.0,
+        "pass_test": true,
+        "sd": 0.0,
+        "se": 0.0,
+        "t": null
+      },
+      "rule1_pass": false,
+      "sentinel": {
+        "df": 11,
+        "interval": [
+          -0.12893636369407052,
+          0.035504240653249634
+        ],
+        "mean": -0.04671606152041045,
+        "p": 0.11852133399577022,
+        "pass_test": false,
+        "sd": 0.12940545294046032,
+        "se": 0.03735613654489011,
+        "t": -1.2505592344720313
+      },
+      "success_differences": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "tasks": [
+        "T02",
+        "T04",
+        "T05",
+        "T09",
+        "T11",
+        "T12",
+        "T14",
+        "T15",
+        "T21",
+        "T22",
+        "T23",
+        "T24"
+      ],
+      "zero_pass_note": "one extra passing run on a no-pass task moves the log difference by about 0.69"
+    }
+  },
+  "voided_per_batch": {
+    "20261110T105336-5e1fbe43": 0,
+    "20261110T112216-32a63939": 0,
+    "20261110T113939-7d9083c1": 0,
+    "20261110T115023-82cbb735": 0,
+    "20261110T121145-9d35e892": 0,
+    "20261110T122908-e04cc292": 0,
+    "20261110T124535-1aa9e38a": 0,
+    "20261110T130202-f76bd3d2": 0,
+    "20261110T131639-c1bf7327": 0,
+    "20261110T132403-646179e6": 0,
+    "20261110T133132-d35c2b24": 0,
+    "20261110T133920-09e306a9": 0,
+    "20261110T134835-43bce101": 0
+  }
+}

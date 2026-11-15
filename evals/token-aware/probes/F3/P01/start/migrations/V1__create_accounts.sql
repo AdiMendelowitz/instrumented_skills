@@ -1,0 +1,1 @@
+CREATE TABLE accounts (id BIGINT PRIMARY KEY, email TEXT NOT NULL);

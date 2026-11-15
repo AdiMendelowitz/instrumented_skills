@@ -1,0 +1,1 @@
+Before we merge, check whether the migration in V00014__add_invoice_index.sql is safe to run during business hours. Name any statements that take long locks on large tables and say what should change. Write the review to out/answer.md.

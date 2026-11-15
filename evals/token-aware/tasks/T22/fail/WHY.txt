@@ -1,0 +1,1 @@
+The grep-style removal deleted the audit comment line that mentions legacy-ftp.partner.example along with the active entry.

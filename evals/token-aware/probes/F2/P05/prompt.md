@@ -1,0 +1,1 @@
+Write out/backfill_plan.md with the steps for rebuilding the storefront partition for 16 October 2026 from the source system. Give the steps as a numbered list, one step per line, in the order they must run.

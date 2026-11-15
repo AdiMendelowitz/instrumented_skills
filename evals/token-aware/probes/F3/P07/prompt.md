@@ -1,0 +1,1 @@
+Write one example log line that the accounts service emits when a user signs in successfully. Save it as a single JSON object in out/log_line.json, including the level, a message and a request identifier.

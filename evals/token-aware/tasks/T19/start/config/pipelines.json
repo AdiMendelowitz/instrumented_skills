@@ -1,0 +1,46 @@
+{
+  "project": "brindle-ingest",
+  "default_timezone": "UTC",
+  "retention_days": 90,
+  "pipelines": [
+    {
+      "name": "orders_daily",
+      "source": "orders_export",
+      "schedule": "0 2 * * *",
+      "enabled": true,
+      "target": {
+        "warehouse": "analytics_v1",
+        "dataset": "sales"
+      },
+      "fallback": {
+        "warehouse": "analytics_v1",
+        "dataset": "sales_backup"
+      }
+    },
+    {
+      "name": "orders_hourly",
+      "source": "orders_stream",
+      "schedule": "0 * * * *",
+      "enabled": true,
+      "target": {
+        "warehouse": "analytics_v1",
+        "dataset": "sales_live"
+      },
+      "fallback": null
+    },
+    {
+      "name": "customers_weekly",
+      "source": "crm_export",
+      "schedule": "0 5 * * 1",
+      "enabled": false,
+      "target": {
+        "warehouse": "analytics_v2",
+        "dataset": "customers"
+      },
+      "fallback": {
+        "warehouse": "analytics_v2",
+        "dataset": "customers_backup"
+      }
+    }
+  ]
+}

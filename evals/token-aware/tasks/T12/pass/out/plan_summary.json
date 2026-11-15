@@ -1,0 +1,57 @@
+{
+  "by_country": {
+    "CZ": {
+      "active_seats": 12,
+      "active_subscriptions": 2,
+      "customers": 2,
+      "plans": {
+        "pro": 2
+      }
+    },
+    "DE": {
+      "active_seats": 39,
+      "active_subscriptions": 5,
+      "customers": 3,
+      "plans": {
+        "pro": 2,
+        "starter": 1,
+        "team": 2
+      }
+    },
+    "GB": {
+      "active_seats": 24,
+      "active_subscriptions": 3,
+      "customers": 3,
+      "plans": {
+        "pro": 2,
+        "team": 1
+      }
+    },
+    "NL": {
+      "active_seats": 10,
+      "active_subscriptions": 2,
+      "customers": 2,
+      "plans": {
+        "starter": 1,
+        "team": 1
+      }
+    },
+    "US": {
+      "active_seats": 20,
+      "active_subscriptions": 1,
+      "customers": 2,
+      "plans": {
+        "team": 1
+      }
+    },
+    "unknown": {
+      "active_seats": 3,
+      "active_subscriptions": 2,
+      "customers": 2,
+      "plans": {
+        "starter": 2
+      }
+    }
+  },
+  "unmatched_active_subscriptions": 2
+}

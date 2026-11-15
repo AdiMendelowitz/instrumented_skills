@@ -1,0 +1,1 @@
+Analysts want to see what a customer's address was on any past date, not only today. Design the customer dimension table so past values are kept, with validity start and end dates, a current row indicator and the merge logic. Save the design to out/answer.md.

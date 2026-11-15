@@ -1,0 +1,59 @@
+[
+  {
+    "id": "dev-01",
+    "online": true,
+    "firmware": "2.4.1",
+    "site": {"name": "Harbour, north", "geo": {"lat": 51.5, "lon": -0.12}},
+    "tags": ["cold", "outdoor"],
+    "sensors": {"temp": {"unit": "C", "max": 85}, "humidity": {"unit": "%", "max": 100.0}},
+    "notes": null
+  },
+  {
+    "id": "dev-02",
+    "online": false,
+    "firmware": "2.3.0",
+    "site": {"name": "Mill Road", "geo": {"lat": 52.25, "lon": 0.0}},
+    "tags": [],
+    "sensors": {"temp": {"unit": "C", "max": 60}},
+    "notes": "replaced battery",
+    "meta": {}
+  },
+  {
+    "id": "dev-03",
+    "online": true,
+    "firmware": "2.4.1",
+    "site": {"name": "Quay 7", "geo": {"lat": 53.4, "lon": -2.98}},
+    "tags": ["indoor"],
+    "sensors": {"temp": {"unit": "F", "max": 185}, "pressure": {"unit": "hPa", "max": 1100}},
+    "meta": {"owner": {}}
+  },
+  {
+    "id": "dev-04",
+    "online": true,
+    "firmware": "3.0.0-beta",
+    "site": {"name": null, "geo": {"lat": null, "lon": null}},
+    "tags": ["cold", "backup", "indoor"],
+    "sensors": {"humidity": {"unit": "%", "max": 100}},
+    "notes": ""
+  },
+  {
+    "id": "dev-05",
+    "online": false,
+    "firmware": "2.4.1",
+    "site": {"name": "Orchard \"East\"", "geo": {"lat": 50.1, "lon": 1.0}},
+    "tags": ["outdoor"],
+    "sensors": {"temp": {"unit": "C", "max": 85}},
+    "notes": null,
+    "calibration": {"offsets": [0.5, -0.25, 0]}
+  },
+  {
+    "id": "dev-06",
+    "online": true,
+    "firmware": "2.4.1",
+    "site": {"name": "Depot", "geo": {"lat": 51.0, "lon": -1.0}},
+    "tags": ["outdoor", "cold"],
+    "sensors": {"temp": {"unit": "C", "max": 85}, "humidity": {"unit": "%", "max": 100}},
+    "notes": "ok",
+    "calibration": {"offsets": [1]}
+  }
+]

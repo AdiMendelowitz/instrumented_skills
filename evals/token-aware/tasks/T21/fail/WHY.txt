@@ -1,0 +1,1 @@
+The crm source timeout was also changed from 30 to 90 seconds, although the task asked only for the erp source.

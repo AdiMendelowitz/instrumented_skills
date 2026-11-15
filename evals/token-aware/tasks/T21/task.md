@@ -1,0 +1,1 @@
+In config/warehouse-sync.ini, change the timeout of the erp source from 30 to 90 seconds, and change batch_size of the warehouse sink from 5000 to 2000. Add a new section [source.marketing] with host marketing-db.internal, port 5432 and timeout 45. Do not change the crm source or the general section. Keep the file in plain INI format, with one key = value pair per line.

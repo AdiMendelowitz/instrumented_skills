@@ -1,0 +1,1 @@
+The shipping source owner says the feed has changed, and last night's load failed on a column nobody expected. Compare incoming_schema.txt with registered_schema.txt, list every added, removed, renamed or retyped column, and save the list to out/answer.md.

@@ -1,0 +1,1 @@
+The percentile takes the zero-based index floor(p times n / 100) instead of the nearest-rank position, so GET /api/orders/{id} shows p50 118 and p95 310 instead of 112 and 250.

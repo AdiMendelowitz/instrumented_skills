@@ -1,0 +1,1 @@
+Add a feature flag for the new checkout summary page. The flag is called checkout_summary_v2, its owner is storefront-web, and it should be retired on 31 December 2026. Create it as flags/checkout_summary_v2.yaml.

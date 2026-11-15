@@ -1,0 +1,1 @@
+total_pages uses floor division, so 7 items at 3 per page give 2 pages and the partial last page is lost; next_page inherits this (test_partial_last_page_is_counted fails).
