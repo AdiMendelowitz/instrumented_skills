@@ -167,7 +167,7 @@ ambiguity the next paragraph describes.
 
 ## Insights from prior use
 
-Patterns from real sessions using this skill and its companions:
+Patterns from real sessions using this skill and the others in this repository:
 
 - **Stating a savings or effort figure without measuring it** recurred across multiple
   sessions. This skill's own "30-40%, unmeasured" line is that pattern caught in the
@@ -181,7 +181,7 @@ Patterns from real sessions using this skill and its companions:
   code by that definition, so its test suite covers the failure paths (malformed stdin,
   missing transcript, unwritable state dir) more heavily than its happy path.
 - **Silent-failure-by-design is a real risk, not a theoretical one.** A journal-capture
-  Stop hook in a companion skill failed silently in a prior session and was noticed only
+  Stop hook in another skill failed silently in a prior session and was noticed only
   when a downstream file showed a stale date. Any hook that fails open needs an explicit
   verification step, which is why `CLAUDE_md-snippet.md` ships one.
 - **Two proposals surfaced twice and were never applied** until this pass: writing the

@@ -10,9 +10,9 @@ shape a session with zero memory of this one can execute.
 | | |
 |---|---|
 | **Protocol** | v1.7, phases 1 to 4, one shared 2-round convergence cap |
-| **Companions** | `retrospective`, `critique`, `handoff` (each phase runs its companion's protocol; where one is missing, the phase runs its shape inline and says so) |
+| **Works with** | `retrospective`, `critique`, `handoff` (each phase runs that skill's protocol; where one is missing, the phase runs its shape inline and says so) |
 | **Toolkit** | none; the checks it needs live in `handoff/tools/measure_savings.py` |
-| **Writes** | retro, patched retro, handoff and session-start prompt to the project's `<notes-root>/{retros,handoffs,prompts}/`, per the DESTINATIONS block shared with the three companions |
+| **Writes** | retro, patched retro, handoff and session-start prompt to the project's `<notes-root>/{retros,handoffs,prompts}/`, per the DESTINATIONS block shared with those three skills |
 
 ## Files
 

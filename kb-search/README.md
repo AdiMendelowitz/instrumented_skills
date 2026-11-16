@@ -3,7 +3,7 @@
 **grep answers when one term anchors the query. This answers when none does.**
 
 Ranked lexical search (BM25) over a corpus of markdown, text, or JSONL files. It is the
-read-path for the durable artifacts the other skills write: critique logs, retro journals,
+read-path for the durable artefacts the other skills write: critique logs, retro journals,
 handoff snapshots, reference documents. It has no agent loop, makes no LLM call, and
 depends on nothing outside the standard library.
 
@@ -30,7 +30,7 @@ snapshots for what a past session already settled. See the top-level
 [README](../README.md#how-the-skills-connect) for the full data-flow diagram across all
 five skills.
 
-## Hard dependency ⚠️
+## Hard dependency
 
 > [!WARNING]
 > kb-search defers one decision to `token-aware/references/search_policy.md`: when to

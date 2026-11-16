@@ -18,7 +18,7 @@ repeated work on the same target compound instead of restarting from zero every 
 | [`kb-search/`](kb-search/) | Ranked BM25 search over what the other four write. Standard library only, no LLM call. | Ships complete, tests pass (run for current count) |
 | [`close-session/`](close-session/) | Runs `retrospective`, `critique` and `handoff` as one end-of-session pipeline: adversarial retro, critique of that retro to convergence, an independently-forked verification pass, then the next session's literal first prompt, ROI-ranked and pre-critiqued. | Ships complete |
 
-The reasoning behind these, one post per skill, is on the companion blog: [Skills That Remember](https://blog.adimendelowitz.dev/skills/intro.html).
+The reasoning behind these, one post per skill, is on the blog: [Skills That Remember](https://blog.adimendelowitz.dev/skills/intro.html).
 
 ## Why
 
@@ -29,77 +29,14 @@ that loss happens, a review, a retro, a handoff, a cost argument, a search, an
 end-of-session close, and shares the same fix: write the state down somewhere the next
 session can read it back, and never let the two categories blur into each other.
 
-## Contents
-
-- [Why](#why)
-- [Status of this repo](#status-of-this-repo)
-- [Install](#install)
-- [How the skills connect](#how-the-skills-connect)
-- [Customising for your own setup](#customising-for-your-own-setup)
-- [Support](#support)
-- [License](#license)
-
-## Status of this repo
-
-All six ship complete: full protocols and references, each with a real, tested toolkit
-behind it, not just a specification.
-
-| Skill | Needs before you rely on it | Optional extras |
-|---|---|---|
-| `critique` | Nothing further | |
-| `kb-search` | Nothing further | |
-| `close-session` | Nothing further. Degrades gracefully: where `retrospective`, `critique` or `handoff` isn't installed, it runs that phase's shape inline and says so, per its own `SKILL.md`. Works best with all three; alone is a supported, reduced configuration. | |
-| `token-aware` | `tools/rates.json` filled in with current, verified rates. Ships with placeholder rates and an intentionally-expired date (see the `_comment` field), so the loader refuses to compute rather than return a silent wrong number. | |
-| `retrospective` | Nothing further to run manually. | Optional Stop hook (`scripts/retro_capture.py`) for automatic journal capture. Works fine without it, using manual mode. |
-| `handoff` | Nothing further to run manually. | Optional UserPromptSubmit hook (`tools/session_watch.py`) for session-length nudges. Works fine without it, using manual mode. |
-
-Hooks that get added need registering in `settings.json` to run automatically.
-
-> [!WARNING]
-> Run every test suite yourself before trusting the numbers above, not instead of running
-> them: a count in prose drifts the moment a test is added. Check the ⚠️ / note sections in
-> each skill's own README before relying on it for anything load-bearing.
-
-## Install
-
-Each skill is a self-contained folder. On Claude Code or any surface with a persistent
-filesystem, the fastest path is the install script at the repo root: it copies each
-selected skill to `~/.claude/skills/`, archives whatever it replaces first, and (for
-`token-aware`) runs its test suite as a sanity check afterward.
-
-```bash
-git clone <this-repo-url>
-cd instrumented_skills
-
-./install.sh                              # macOS/Linux, installs all six skills
-./install.sh critique token-aware         # or just the ones you want
-```
-
-```powershell
-.\install.ps1                                   # Windows, installs all six skills
-.\install.ps1 -Skills critique,token-aware       # or just the ones you want
-```
-
-To copy a skill by hand instead, or onto a hosted chat surface with project-level
-custom instructions, where you'd upload the folder's contents or paste `SKILL.md` plus
-references into your project's instructions, just copy the folder:
-
-```bash
-cp -r instrumented_skills/critique ~/.claude/skills/
-```
-
-Or download the folder(s) you want directly from GitHub without cloning the whole repo,
-using the "Download" option on an individual folder, or GitHub's zip download for the
-full repository.
-
 ## How the skills connect
 
 Each skill works standalone, but the set is designed to compose. Four of them write
-durable artifacts (critique logs, retro journals, handoff snapshots, token-aware cost
+durable artefacts (critique logs, retro journals, handoff snapshots, token-aware cost
 logs); `kb-search` is the shared read-path over all of them, and `token-aware` owns the
 policy that says when to use it.
 
-Solid arrows are artifacts written and later read. Dashed arrows are a policy dependency
+Solid arrows are artefacts written and later read. Dashed arrows are a policy dependency
 or a trigger signal, not data. Blue is the shared read-path; orange is what writes to it.
 
 ```mermaid
@@ -150,13 +87,76 @@ Every connection is read-only and, apart from kb-search's policy dependency, opt
 when no counters data exists.
 
 `close-session` isn't a sixth node in the diagram above, since it isn't a peer
-artifact-writer: it runs `retrospective`, `critique` and `handoff`'s own protocols
+artefact-writer: it runs `retrospective`, `critique` and `handoff`'s own protocols
 directly as an end-of-session pipeline (retro, critique the retro to convergence, an
 independently-forked verification pass that writes the handoff), then builds the next
 session's opening prompt from what they produced. It's the composition, not another
-artifact source.
+artefact source.
 
 </details>
+
+## Contents
+
+- [Why](#why)
+- [How the skills connect](#how-the-skills-connect)
+- [Status of this repo](#status-of-this-repo)
+- [Install](#install)
+- [Customising for your own setup](#customising-for-your-own-setup)
+- [Support](#support)
+- [Licence](#licence)
+
+## Status of this repo
+
+All six ship complete: full protocols and references, each with a real, tested toolkit
+behind it, not just a specification.
+
+| Skill | Needs before you rely on it | Optional extras |
+|---|---|---|
+| `critique` | Nothing further | |
+| `kb-search` | Nothing further | |
+| `close-session` | Nothing further. Degrades gracefully: where `retrospective`, `critique` or `handoff` isn't installed, it runs that phase's shape inline and says so, per its own `SKILL.md`. Works best with all three; alone is a supported, reduced configuration. | |
+| `token-aware` | `tools/rates.json` filled in with current, verified rates. Ships with placeholder rates and an intentionally-expired date (see the `_comment` field), so the loader refuses to compute rather than return a silent wrong number. | |
+| `retrospective` | Nothing further to run manually. | Optional Stop hook (`scripts/retro_capture.py`) for automatic journal capture. Works fine without it, using manual mode. |
+| `handoff` | Nothing further to run manually. | Optional UserPromptSubmit hook (`tools/session_watch.py`) for session-length nudges. Works fine without it, using manual mode. |
+
+Hooks that get added need registering in `settings.json` to run automatically.
+
+> [!WARNING]
+> Run every test suite yourself before trusting the numbers above, not instead of running
+> them: a count in prose drifts the moment a test is added. Check the warning and note sections in
+> each skill's own README before relying on it for anything load-bearing.
+
+## Install
+
+Each skill is a self-contained folder. On Claude Code or any surface with a persistent
+filesystem, the fastest path is the install script at the repo root: it copies each
+selected skill to `~/.claude/skills/`, archives whatever it replaces first, and (for
+`token-aware`) runs its test suite as a sanity check afterward.
+
+```bash
+git clone <this-repo-url>
+cd instrumented_skills
+
+./install.sh                              # macOS/Linux, installs all six skills
+./install.sh critique token-aware         # or just the ones you want
+```
+
+```powershell
+.\install.ps1                                   # Windows, installs all six skills
+.\install.ps1 -Skills critique,token-aware       # or just the ones you want
+```
+
+To copy a skill by hand instead, or onto a hosted chat surface with project-level
+custom instructions, where you'd upload the folder's contents or paste `SKILL.md` plus
+references into your project's instructions, just copy the folder:
+
+```bash
+cp -r instrumented_skills/critique ~/.claude/skills/
+```
+
+Or download the folder(s) you want directly from GitHub without cloning the whole repo,
+using the "Download" option on an individual folder, or GitHub's zip download for the
+full repository.
 
 ## Customising for your own setup
 
@@ -171,6 +171,6 @@ not, and are flagged everywhere they appear.
 Open a GitHub issue on this repository for bugs or questions; there's no other support
 channel right now.
 
-## License
+## Licence
 
 MIT. See [`LICENSE`](LICENSE).
