@@ -22,7 +22,7 @@ cache break-even claim once contradicted the multipliers printed right beside it
 - [Adapting this skill](#adapting-this-skill)
 - [The counters-proxy connection](#the-counters-proxy-connection)
 
-## Before you use this
+## Before you use this ⚠️
 
 > [!WARNING]
 > **`tools/rates.json` ships as a template with placeholder rates and an intentionally
