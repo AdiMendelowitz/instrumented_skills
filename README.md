@@ -1,41 +1,51 @@
 # instrumented_skills
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Tested on Python 3.14](https://img.shields.io/badge/python-tested%20on%203.14-blue)
-![Skills](https://img.shields.io/badge/skills-5-informational)
+[![ci](https://github.com/AdiMendelowitz/instrumented_skills/actions/workflows/ci.yml/badge.svg)](https://github.com/AdiMendelowitz/instrumented_skills/actions/workflows/ci.yml)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
-**One discipline, five skills: log state externally, read it back before acting, and
-never let a suggestion pass as a decision.** Built for Claude Code and any other agent
-surface with a persistent filesystem. Each skill works standalone; together they let
-repeated work on the same target compound instead of restarting from zero every session.
+**Five Claude Code skills that write their state to disk and read it back before acting,
+so the next session starts from what the last one settled.**
 
-| Skill | What it does | Status |
+Work that spans many sessions loses its decisions. A week later, a plan that was only
+proposed reads exactly like one that was agreed, and a defect found on Monday gets found
+again on Thursday. Each skill here covers one place where that happens (a review, a
+retrospective, a handoff, a search and the end of a session) and fixes it the same way,
+with a log that the next run reads first.
+
+## Quick start
+
+```bash
+git clone https://github.com/AdiMendelowitz/instrumented_skills
+cd instrumented_skills
+./install.sh                    # macOS and Linux: copies all five skills to ~/.claude/skills/
+```
+
+```powershell
+.\install.ps1                   # Windows
+```
+
+Then open Claude Code in any project and run `/critique README.md`. Run it a second time
+after you change the file, and the review starts from the first run's log.
+
+## The skills
+
+| Skill | What it does | Run it with |
 |---|---|---|
-| [`critique/`](critique/) | Adversarial multi-lens review of a file, with memory: reads its own prior log before starting, so a second pass reconciles what changed instead of rediscovering it. | Ships complete |
-| [`retrospective/`](retrospective/) | Panel-style retros with anchored lenses, no finding without a quote, line, or named absence, and a cost lens that reports nothing rather than invents an ROI. Capture can be manual or automatic via a Stop hook. | Ships complete, optional capture hook |
-| [`handoff/`](handoff/) | A structured end-of-session snapshot, schema instead of prose, so a decision and a suggestion can't blur together a few sessions later. Ships with a savings/lint toolkit and an optional session-length hook. | Ships complete, 55 tests pass |
-| [`kb-search/`](kb-search/) | Ranked BM25 search over what the other three write. Standard library only, no LLM call. | Ships complete, tests pass (run for current count) |
-| [`close-session/`](close-session/) | Runs `retrospective`, `critique` and `handoff` as one end-of-session pipeline: adversarial retro, critique of that retro to convergence, an independently-forked verification pass, then the next session's literal first prompt, ROI-ranked and pre-critiqued. | Ships complete |
+| [`critique`](critique/) | Reviews one file through a fixed set of lenses and logs every finding. The next run on the same file reads that log first and marks each finding fixed, still present or withdrawn. | `/critique <file> [purpose]` |
+| [`retrospective`](retrospective/) | Turns a journal of marked lines into a retro where every finding needs a quote, a line or a named absence behind it. Capture is typed by hand or runs from a Stop hook. | `/retrospective run <slug>` |
+| [`handoff`](handoff/) | Writes an end-of-session snapshot in eight labelled sections that keep decisions apart from suggestions, with a linter that checks the snapshot. | `/handoff [next objective]` |
+| [`kb-search`](kb-search/) | Ranks the logs, journals and snapshots the other three write with BM25, using the Python standard library and no model call. | `/kb-search` |
+| [`close-session`](close-session/) | Runs retrospective, critique and handoff as one end-of-session pipeline, then writes the prompt that opens the next session. | `/close-session` |
 
-The reasoning behind these, one post per skill, is on the blog: [Skills That Remember](https://blog.adimendelowitz.dev/skills/intro.html).
-
-## Why
-
-State that only lives inside a conversation gets lost the moment the conversation ends:
-a decision reached last Tuesday reads exactly like a suggestion that sounded good at the
-time, once enough sessions have passed. Each of these five skills addresses one place
-that loss happens, a review, a retro, a handoff, a search, an end-of-session
-close, and shares the same fix: write the state down somewhere the next
-session can read it back, and never let the two categories blur into each other.
+Each skill works on its own. The reasoning behind them, one post per skill, is on the
+blog: [Skills That Remember](https://blog.adimendelowitz.dev/skills/intro.html).
 
 ## How the skills connect
 
-Each skill works standalone, but the set is designed to compose. Three of them write
-durable artefacts (critique logs, retro journals, handoff snapshots), and `kb-search` is
-the shared read-path over all of them.
-
-Solid arrows are artefacts written and later read. Dashed arrows are trigger
-signals. Blue is the shared read-path; orange is what writes to it.
+Three skills write durable records (critique logs, retro journals and handoff snapshots),
+and `kb-search` is the shared way to read them back. Solid arrows are records written and
+read later, and dashed arrows are trigger signals. Orange nodes write records and the blue
+node reads them.
 
 ```mermaid
 flowchart LR
@@ -56,111 +66,74 @@ flowchart LR
 ```
 
 <details>
-<summary>How each connection actually works</summary>
+<summary>How each connection works</summary>
 
-- `kb-search` reads what the others write. `critique` reconciles a target against its own
-  last log entry; `kb-search` lets a run ask whether the same root cause fired on any
-  *other* target. A retro can check whether a long-horizon action was ever done; a handoff
-  can search prior snapshots for what a past session settled. Its own
+- `kb-search` reads what the others write. `critique` already reconciles a file against
+  its own last log entry, and `kb-search` lets a run ask whether the same root cause fired
+  on any *other* file. A retro can check whether a long-horizon action was ever done, and
+  a handoff can search earlier snapshots for what a past session settled. Its own
   `references/search_policy.md` decides when to grep first and when to escalate to a
   ranked search.
-- `critique`'s log entries carry a `counters` block (calls, cap, bytes, out_chars, a SEV
-  histogram, new findings, carried findings) alongside a top-level `promoted` flag.
-  `retrospective`'s finance lens can use that block as one of its admissible evidence
-  sources when anchoring a cost-related finding.
-- `retrospective` also exposes a LITE invocation path: a review or handoff skill can
-  trigger a reduced-scale retro when its own condition fires (a review that closes out a
-  project, a handoff that surfaces the same pattern a third time). `handoff`'s own
-  protocol closes by running a review/critique skill against the snapshot itself, rather
-  than performing that review inline, so a session ending with open SEV1/SEV2-equivalent
-  issues does not silently defer them.
+- Every `critique` log entry carries a `counters` block (calls, cap, bytes, output
+  characters, a severity histogram, new findings and carried findings) and a top-level
+  `promoted` flag. The finance lens in `retrospective` can cite that block as evidence
+  when it anchors a cost finding.
+- `retrospective` has a LITE path that a review or handoff skill can trigger when its own
+  condition fires, such as a review that closes a project or a handoff that records the
+  same pattern for the third time. `handoff` ends by running a review skill on the
+  snapshot itself, so a session that closes with open SEV1 or SEV2 issues states them.
 
-Every connection is read-only and optional. `critique` works standalone, and
-`retrospective` falls back gracefully when no counters data exists.
+Every connection is read-only and optional. `critique` works alone, and `retrospective`
+falls back to timestamps when no counters data exists.
 
-`close-session` isn't a fifth node in the diagram above, since it isn't a peer
-artefact-writer: it runs `retrospective`, `critique` and `handoff`'s own protocols
-directly as an end-of-session pipeline (retro, critique the retro to convergence, an
-independently-forked verification pass that writes the handoff), then builds the next
-session's opening prompt from what they produced. It's the composition, not another
-artefact source.
+`close-session` sits outside the diagram because the records it leaves come from the three
+skills it runs. It runs the `retrospective`, `critique` and `handoff` protocols in sequence (a retro, a critique
+of that retro, an independent verification pass that writes the handoff) and then builds
+the next session's opening prompt from their output.
 
 </details>
 
-## Contents
+## Optional hooks and tests
 
-- [Why](#why)
-- [How the skills connect](#how-the-skills-connect)
-- [Status of this repo](#status-of-this-repo)
-- [Install](#install)
-- [Customising for your own setup](#customising-for-your-own-setup)
-- [Support](#support)
-- [Licence](#licence)
-
-## Status of this repo
-
-All five ship complete: full protocols and references, each with a real, tested toolkit
-behind it, not just a specification.
-
-| Skill | Needs before you rely on it | Optional extras |
+| Skill | Optional extra | Without it |
 |---|---|---|
-| `critique` | Nothing further | |
-| `kb-search` | Nothing further | |
-| `close-session` | Nothing further. Degrades gracefully: where `retrospective`, `critique` or `handoff` isn't installed, it runs that phase's shape inline and says so, per its own `SKILL.md`. Works best with all three; alone is a supported, reduced configuration. | |
-| `retrospective` | Nothing further to run manually. | Optional Stop hook (`scripts/retro_capture.py`) for automatic journal capture. Works fine without it, using manual mode. |
-| `handoff` | Nothing further to run manually. | Optional UserPromptSubmit hook (`tools/session_watch.py`) for session-length nudges. Works fine without it, using manual mode. |
+| `retrospective` | A Stop hook, `scripts/retro_capture.py`, that captures marked lines from each session | You type the marked lines yourself (LOG mode) |
+| `handoff` | A UserPromptSubmit hook, `tools/session_watch.py`, that counts turns and says when to write a handoff | You decide when the session is long enough |
+| `close-session` | `retrospective`, `critique` and `handoff` installed beside it | It runs each missing phase inline at reduced quality and says so |
 
-Hooks that get added need registering in `settings.json` to run automatically.
+A hook runs automatically once it is registered in `settings.json`. The retrospective
+README shows its registration, and `handoff/CLAUDE_md-snippet.md` shows the handoff one.
+The Python tools use the standard library only. CI runs the `handoff` and `kb-search` test
+suites on every push with Python 3.13, and you can run them with `python -m pytest -q` in
+each `tools/` folder. `retro_capture.py` has no test suite yet.
 
-> [!WARNING]
-> Run every test suite yourself before trusting the numbers above, not instead of running
-> them: a count in prose drifts the moment a test is added. Check the warning and note sections in
-> each skill's own README before relying on it for anything load-bearing.
+## Where files go
 
-## Install
+Documents (retros, handoffs and session-start prompts) go to a notes folder that your
+project's `CLAUDE.md` names under a "Where internal files live" heading. Without that
+heading, a skill asks once and then creates `notes/`, or `data/notes/` when `data/` is
+gitignored. Logs, journals and other skill state go under the project's `.claude/` folder.
 
-Each skill is a self-contained folder. On Claude Code or any surface with a persistent
-filesystem, the fastest path is the install script at the repo root: it copies each
-selected skill to `~/.claude/skills/` and archives whatever it replaces first.
-
-```bash
-git clone <this-repo-url>
-cd instrumented_skills
-
-./install.sh                              # macOS/Linux, installs all five skills
-./install.sh critique kb-search           # or just the ones you want
-```
-
-```powershell
-.\install.ps1                                   # Windows, installs all five skills
-.\install.ps1 -Skills critique,kb-search         # or just the ones you want
-```
-
-To copy a skill by hand instead, or onto a hosted chat surface with project-level
-custom instructions, where you'd upload the folder's contents or paste `SKILL.md` plus
-references into your project's instructions, just copy the folder:
+## Other ways to install
 
 ```bash
-cp -r instrumented_skills/critique ~/.claude/skills/
+./install.sh critique kb-search                 # only the skills you name
+.\install.ps1 -Skills critique,kb-search        # the same on Windows
+cp -r critique ~/.claude/skills/                # by hand, one folder per skill
 ```
 
-Or download the folder(s) you want directly from GitHub without cloning the whole repo,
-using the "Download" option on an individual folder, or GitHub's zip download for the
-full repository.
+The install scripts archive any existing copy of a skill before they replace it. On a
+hosted chat surface with project instructions, upload the skill folder or paste its
+`SKILL.md` and references into the project.
 
-## Customising for your own setup
+## Adapting to your setup
 
-Every skill's README has an "Adapting this skill" section covering the parts that are
-genuinely environment-specific: where logs live on your surface, how to add a lens or
-persona. The mechanism (log, reconcile, don't re-derive) is
-meant to transfer directly; the specifics (paths, project names) are
-not, and are flagged everywhere they appear.
+Each skill's README has an "Adapting this skill" section for the parts that depend on
+your environment, such as where logs live and how to add a lens. The mechanism of logging,
+reconciling and never re-deriving transfers as it is, and every path or project name that
+needs changing is marked where it appears.
 
-## Support
+## Author and support
 
-Open a GitHub issue on this repository for bugs or questions; there's no other support
-channel right now.
-
-## Licence
-
-MIT. See [`LICENSE`](LICENSE).
+Written by [Adi Mendelowitz](https://adimendelowitz.dev). Open a GitHub issue for bugs or
+questions. MIT licence, see [`LICENSE`](LICENSE).

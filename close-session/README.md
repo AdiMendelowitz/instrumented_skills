@@ -2,29 +2,42 @@
 
 **End a session with a record the next one can act on from its first turn.**
 
-Four phases, each one's output the next one's only input: an adversarial retrospective, a
-critique of that retrospective to convergence, an independent verification pass that writes
-the structured handoff, and the literal first message of the next session, in a STEP-numbered
-shape a session with zero memory of this one can execute.
+`close-session` runs four phases, and each phase's output is the next one's only input: an
+adversarial retrospective, a critique of that retrospective to convergence, an independent
+verification pass that writes the structured handoff, and the next session's opening prompt
+in a step-numbered shape that a session with no memory of this one can execute.
 
 | | |
 |---|---|
-| **Protocol** | v1.14, phases 1 to 4, one shared 2-round convergence cap |
-| **Works with** | `retrospective`, `critique`, `handoff` (each phase runs that skill's protocol; where one is missing, the phase runs its shape inline and says so) |
-| **Toolkit** | none; the checks it needs live in `handoff/tools/measure_savings.py` |
-| **Writes** | retro, patched retro, handoff and session-start prompt to the project's `<notes-root>/{retros,handoffs,prompts}/`, per the DESTINATIONS block shared with those three skills |
+| Protocol | v1.14, phases 1 to 4, one shared cap of two convergence rounds |
+| Run it with | `/close-session` |
+| Works with | `retrospective`, `critique` and `handoff`; where one is missing, that phase runs inline at reduced quality and the close says so |
+| Toolkit | none of its own; the handoff checks use `handoff/tools/measure_savings.py`, so install `handoff` for them |
+| Writes | the retro, the patched retro, the handoff and the session-start prompt, to `retros/`, `handoffs/` and `prompts/` in your notes folder |
 
-## Files
+## Quick start
 
-- **`SKILL.md`**: the protocol. Environment detection, budget, the four phases, the save-and-verify rule, the 5-line close.
-- **`references/design-rationale.md`**: the evidence behind the choices, read once if a rule looks unmotivated.
-- **`references/session-start-template.md`**: the shape of the Phase 4 prompt.
-- **`evals/`**: three regression cases in `evals.json`, their fixtures, and one recorded run in `results-2026-10.md`.
+```bash
+./install.sh close-session retrospective critique handoff     # from the repo root
+```
+
+When a session is wrapping up in Claude Code, run `/close-session`. The reply is five lines
+(what ran, what the retro found, what the handoff carries forward, the top risk and the
+three file paths) followed by a short start message to paste as the first message of the
+next session.
 
 ## Adapting this skill
 
-The one setting to decide up front is the notes root: the folder your project's `CLAUDE.md`
-names under "Where internal files live". Without it the skill asks once, then bootstraps
-`notes/` (or `data/notes/` when `data/` is gitignored). The Cowork-specific delivery rules in
-the DESTINATIONS block (`device_commit_files`, md5 read-back) apply only on that surface;
-local Claude Code writes to the resolved path and reads it back.
+Decide the notes folder first, as [Where files go](../README.md#where-files-go) describes.
+Every file the skill writes is read back after writing, and a write it cannot verify is
+reported as unverified.
+
+## Files
+
+```
+SKILL.md                             the protocol: environment detection, budget, four phases, save and verify, the close
+references/design-rationale.md       the evidence behind each choice, for when a rule looks unmotivated
+references/session-start-template.md the shape of the Phase 4 prompt
+evals/evals.json                     three regression cases, fixtures in evals/fixtures/
+evals/results-2026-10.md             one run per case, with and without the skill, on an earlier version
+```

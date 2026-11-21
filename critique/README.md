@@ -1,37 +1,38 @@
 # critique
 
-**A review that remembers what it already found, so the second pass costs less than the
-first.**
+**A file review that reads its own last log before it starts, so the second pass reconciles
+what the first one found.**
 
-Adversarial multi-lens review of a single file: a document, a prompt, or a code file.
-The point that separates it from a one-off review is memory. Every run logs what it
-found, and the next run on the same target reads that log first, so an already-diagnosed
-defect is reconciled (FIXED, STILL-PRESENT, or WITHDRAWN) instead of rediscovered and
-re-billed from scratch. A patch is not a fix until it is promoted, and the log tracks
-that explicitly, so an unpromoted patch does not resurface as new findings next pass.
+`critique` reviews one file at a time, whether a document, a prompt or a code file, through
+five lenses that always run plus a bundle chosen by the file's type. Every run appends a
+log line, and the next run on the same file reads it first, so each earlier finding comes
+back marked FIXED, STILL-PRESENT or WITHDRAWN. Patches land in a versioned copy beside the
+file, and the log records whether that copy was promoted over the original, so an
+unapplied patch is carried forward as still present.
 
 | | |
 |---|---|
-| **Protocol** | v2.10, 8 stages (P0 to P7) |
-| **Lenses** | 5 always-on + bundle-specific (code, docs, systems, ml, multifile) |
-| **Depends on** | nothing (standalone) |
-| **Ships** | complete |
+| Protocol | v2.10, eight stages (P0 to P7) |
+| Run it with | `/critique <file> [purpose]` |
+| Lenses | 5 always on (purpose, evidence, falsification, pre-mortem, red team) plus one bundle per file type |
+| Depends on | nothing |
 
-## Contents
+## Quick start
 
-- [The pipeline](#the-pipeline)
-- [Install](#install)
-- [Adapting this skill](#adapting-this-skill)
-- [Regression testing](#regression-testing)
+```bash
+cp -r critique ~/.claude/skills/          # or ./install.sh critique from the repo root
+```
 
-`SKILL.md` is the protocol. The five bundle files beside it (`code.md`, `docs.md`,
-`systems.md`, `ml.md`, `multifile.md`) hold the lens definitions loaded by target type;
-each begins with `# Bundle:` and is trusted config. `evals/` holds the regression cases,
-their fixtures and one recorded run, for when you change the protocol or a bundle.
+In Claude Code, run `/critique docs/plan.md "a plan the team can execute this week"`. The
+reply opens with a five-line summary, then the findings table, the patched copy
+(`plan.v2.md`) and the command that promotes it. On a hosted chat surface with no
+persistent filesystem, paste `SKILL.md` and the bundles you need into the project
+instructions.
 
 ## The pipeline
 
-The two highlighted stages are the memory loop: P7 writes what P2 reads next time.
+P7 writes the log entry that P2 reads on the next run against the same file, which is the
+memory loop highlighted in blue.
 
 ```mermaid
 flowchart LR
@@ -48,51 +49,55 @@ flowchart LR
     class P2,P7 memory
 ```
 
-The loop at the end is the whole point: P7 writes the log entry that P2 reads on the
-*next* run against the same target. Nothing here happens twice for free.
-
-## Install
-
-Copy the folder to wherever your surface reads skills from, or use the repo-root install
-script:
-
-```bash
-cp -r critique ~/.claude/skills/          # or: ./install.sh critique  (from the repo root)
-```
-
-On a hosted chat surface with no persistent filesystem, paste `SKILL.md` plus the
-bundles you want into the project's custom instructions.
+The tier sets the budget. A single file under 300 lines gets 5 tool calls and at most 8
+findings, and six or more files get 20 calls and 18 findings. A run that reports no
+defect is a valid result, and the protocol says so explicitly so that a model under
+pressure to look thorough has no reason to invent findings.
 
 ## Adapting this skill
 
-Two settings are genuinely environment-specific, and `SKILL.md` points here for both.
+### Where the log lives
 
-**Where the log lives (P1).** On a surface with a persistent filesystem and a repo
-(Claude Code, Cowork with a checkout), the log is
-`${CLAUDE_PROJECT_DIR}/.claude/critique-log/<slug>.jsonl`, one file per target slug.
-Where the filesystem does not persist (a hosted chat surface), the log lives in memory
-instead: a general index for targets that span projects (shared skills, global config)
-and a project-scoped index for targets that belong to one project. Decide the split once
-per installation and name the projects that get their own index; it need not be every
-project, only the ones with enough critique history to make cross-session reconciliation
-worth it.
+With a persistent filesystem and a repository (Claude Code, or Cowork with a checkout),
+the log is `${CLAUDE_PROJECT_DIR}/.claude/critique-log/<slug>.jsonl`, one file per target.
+On a hosted chat surface the log lives in memory, with one general index for targets that
+span projects and a project index for targets that belong to one project. Decide the split
+once per installation, and give a project its own index only when it has enough critique
+history to make reconciliation across sessions worth it.
 
-**Where the fix-everything preference lives (P5).** By default the skill patches SEV1 and
-SEV2 and sends SEV3 to backlog. If you want it to also apply SEV3 and accepted additions
-every run, set a standing fix-everything preference on your surface: a line in the
-project's `CLAUDE.md` (or the equivalent always-loaded config) that the skill reads at
-P5. Without that preference, request it per invocation instead.
+### Applying every finding
 
-**Lenses and bundles.** Each bundle file is a self-contained set of lens
-definitions; add, remove, or reword one without affecting the others, and add a new
-signature row to the P2 table in `SKILL.md` if you introduce a new target type. The
-always-on five (purpose/product, evidence-integrity, falsification, pre-mortem, red-team)
-are never dropped, so keep those out of the droppable-at-cap list.
+By default the skill patches SEV1 and SEV2 findings and sends SEV3 to the backlog. To have
+it apply SEV3 and accepted additions on every run, add a standing fix-everything line to
+the project's `CLAUDE.md` or the equivalent always-loaded config, which the skill reads at
+P5. Without that line, ask for it in the invocation.
+
+### Lenses and bundles
+
+Each bundle file is a self-contained set of lens definitions, so you can add, remove or
+reword one without touching the others. Add a signature row to the P2 table in `SKILL.md`
+when you introduce a new file type. The five always-on lenses are never dropped, so keep
+them off the list of lenses that can be dropped at the cap.
 
 ## Regression testing
 
-When you change `SKILL.md` or a bundle, do not judge a single run by eye. Run a fixed set
-of targets through both the old and new version and compare. The three-case harness (a
-clean document, a document with two planted defects, and a target with a prior unpromoted
-log entry) is described in `evals/README.md`, and `evals/evals.json` holds three further
-ready cases with their fixtures.
+When you change `SKILL.md` or a bundle, run a fixed set of files through the old and the
+new version and compare the two. `evals/README.md` describes the three cases that catch
+most regressions (a clean document, a document with two planted defects and a file with
+an unpromoted prior log entry), and `evals/evals.json` holds three more cases with their
+fixtures. `evals/results-2026-10.md` records one run of each, graded by the run itself, on
+an earlier protocol version, and some checks test the skill's own output format.
+
+## Files
+
+```
+SKILL.md                     the protocol: stages P0 to P7, tiers, budgets, log schema
+code.md                      lens bundle for source files
+docs.md                      lens bundle for prompts and process documents
+systems.md                   lens bundle for architecture and design docs, with a finance section
+ml.md                        lens bundle for model and analytics write-ups
+multifile.md                 lens bundle for documents that reference each other
+evals/README.md              the regression-testing method
+evals/evals.json             three ready cases, fixtures in evals/fixtures/
+evals/results-2026-10.md     one run per case, with and without the skill, on an earlier version
+```

@@ -1,34 +1,35 @@
 # kb-search
 
-**grep answers when one term anchors the query. This answers when none does.**
+**Ranked search over your logs and notes for the questions no single grep term can answer.**
 
-Ranked lexical search (BM25) over a corpus of markdown, text, or JSONL files. It is the
-read-path for the durable artefacts the other skills write: critique logs, retro journals,
-handoff snapshots, reference documents. It has no agent loop, makes no LLM call, and
-depends on nothing outside the standard library.
+`kb-search` ranks chunks of a markdown, text or JSONL corpus with BM25. It is the read path
+for the records the other skills write (critique logs, retro journals, handoff snapshots
+and reference documents), so a run can ask whether a root cause found today has fired on any
+other file, whether a long-horizon action from six weeks ago was carried out, or what a past
+session already settled. It has no agent loop, makes no model call and uses the Python
+standard library only.
 
 | | |
 |---|---|
-| **Method** | BM25 ranking, JSON index cache (never pickle) |
-| **Tests** | `python -m pytest -q` in `tools/`, all pass (count not stated here on purpose, see below) |
-| **Depends on** | nothing outside its own folder; the search policy ships in `references/` |
-| **Ships** | complete |
+| Protocol | v1.1 |
+| Run it with | `/kb-search`, or `python tools/search.py` from another skill |
+| Method | BM25 ranking with a JSON index cache, which loads without running any code |
+| Tests | 69, run with `python -m pytest -q` in `tools/` |
+| Depends on | nothing outside its own folder |
 
-## Contents
+## Quick start
 
-- [Search policy](#search-policy)
-- [What it does](#what-it-does)
-- [Install](#install)
-- [Adapting this skill](#adapting-this-skill)
-- [Files](#files)
+```bash
+cp -r kb-search ~/.claude/skills/          # or ./install.sh kb-search from the repo root
+python ~/.claude/skills/kb-search/tools/search.py --root .claude --domain retro-log --query "lock timeout nightly job"
+```
 
-The point is reconciliation across a whole archive rather than one file. `critique`
-already reconciles a target against its own last log entry; kb-search lets a run ask
-whether the same root cause has fired on any other target. A retro can check whether a
-long-horizon action from six weeks ago was ever carried out. A handoff can search prior
-snapshots for what a past session already settled. See the top-level
-[README](../README.md#how-the-skills-connect) for the full data-flow diagram across the
-skills.
+`--root` holds your corpora and `--domain` names the subdirectory to search, so the corpus
+indexed is `<root>/<domain>`. Both are explicit because the skill never guesses which
+project is active, and corpora live in different places (a retro journal under a project's
+own `.claude/`, a handoff archive under `~/.claude/`). The second command, run from a
+project root, searches that project's retro journals and returns ranked chunks as JSON. The
+index builds on the first search and is cached beside the corpus.
 
 ## Search policy
 
@@ -36,68 +37,47 @@ skills.
 > kb-search defers one decision to `references/search_policy.md`, which is when to reach
 > for it at all. That file is the gating rule (grep first, and escalate to kb-search only
 > when grep is insufficient). Without it the skill gets reached for reflexively, which is
-> the failure it is most exposed to, so keep it in the folder when you copy or adapt it.
+> the failure it is most exposed to, so keep the file in the folder when you copy or adapt
+> the skill.
 
-## What it does
+## What the tools do
 
-- `tools/index.py`: the core (chunking, tokenisation, the Lucene-style BM25, and a JSON,
-  never pickle, index cache that lives beside the corpus rather than inside it) plus the
-  explicit build CLI. Rarely run by hand; search builds lazily.
-- `tools/search.py`: query a corpus, get ranked chunks as JSON. Always exits 0 and reports
-  state in `status`, since a missing corpus is a normal condition a caller handles, not an
-  error.
-
-```
-python tools/search.py --root <corpus-root> --domain <name> --query "<text>" [--top-k N]
-```
-
-The corpus indexed is `<root>/<domain>`: `--root` holds your corpora, `--domain` names
-the subdirectory to search. Both are explicit, since the skill never guesses which project
-is active and corpora live in different places (a retro journal under a project's own
-`.claude/`, a handoff archive global under `~/.claude/`).
-
-## Install
-
-Copy the folder to wherever your surface reads skills from, or use the repo-root install
-script:
-
-```bash
-cp -r kb-search ~/.claude/skills/          # or: ./install.sh kb-search
-```
-
-The toolkit is standard-library only, so there is nothing to `pip install` to run it. For
-the tests:
-
-```bash
-cd kb-search/tools
-python -m pytest -q     # run it for the count; a number in prose drifts as tests are added
-```
+`tools/index.py` holds the core (chunking, tokenisation, a Lucene-style BM25 and the JSON
+index cache) and a build command you rarely need, since search builds the index lazily.
+`tools/search.py` queries a corpus and returns ranked chunks as JSON. It always exits 0 and
+reports its state in a `status` field, because a missing corpus is a normal condition for
+the caller to handle.
 
 ## Adapting this skill
 
-**Point it at a real corpus.** Any append-only directory of markdown, text, or JSONL
-files works. The four properties in `SKILL.md` § Corpus contract (plain text on disk, one
-file per event dated in the filename, a stable location named in the owning skill, and
-append-only in practice) are what make a corpus rank well and age well.
+### Point it at a real corpus
 
-**`--domain` names the subdirectory under `--root` to index.** Give each corpus its own
-subdirectory so their indexes stay separate; there is deliberately no cross-corpus search,
-because ranking a critique finding against a retro line on one scale produces a
-meaningless number.
+Any append-only directory of markdown, text or JSONL files works. The four properties in
+`SKILL.md` § Corpus contract (plain text on disk, one file per event with the date in the
+filename, a stable location named by the owning skill, and append-only in practice) are what
+make a corpus rank well and age well.
 
-**Tuning is minimal on purpose.** BM25 `BM25_K1` and `BM25_B` and the `NOISE_DIRS`
-exclusion set live near the top of `tools/index.py`; the top-k cap and default excerpt
-length are constants in `tools/search.py`. Change the excluded-directory set if your corpus
-keeps machinery files somewhere unusual, but keep the exclusion: short, keyword-dense
-machinery files outrank genuine content otherwise.
+### One domain per corpus
+
+Give each corpus its own subdirectory so the indexes stay separate. There is deliberately
+no search across corpora, because a critique finding and a retro line ranked on one scale
+produce a meaningless number.
+
+### Tuning
+
+`BM25_K1`, `BM25_B` and the `NOISE_DIRS` exclusion set sit near the top of
+`tools/index.py`, and the top-k cap and default excerpt length are constants in
+`tools/search.py`. Change the excluded directories if your corpus keeps machinery files
+somewhere unusual, and keep the exclusion itself, since short, keyword-dense machinery files
+otherwise outrank real content.
 
 ## Files
 
 ```
-SKILL.md                      the protocol, output contract, and design notes
+SKILL.md                      the protocol, output contract and design notes
 references/search_policy.md   when to grep and when to escalate to kb-search
-tools/index.py                core (chunking, tokenisation, BM25, JSON cache) + build CLI
+tools/index.py                core (chunking, tokenisation, BM25, JSON cache) and build command
 tools/search.py               query entry point (always exits 0, status in JSON)
-tools/test_index.py           tests for the core and the build CLI
+tools/test_index.py           tests for the core and the build command
 tools/test_search.py          tests for ranking and the four degradation states
 ```

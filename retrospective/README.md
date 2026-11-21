@@ -1,39 +1,39 @@
 # retrospective
 
-**Two ways to fill the journal, one discipline for turning it into a retro: no lens
-reports a finding it can't point to evidence for.**
+**Retros built from a journal of marked lines, where no lens reports a finding it cannot
+point to.**
 
-Structured retrospectives that compound instead of restarting from zero each time: a
-fixed panel of lenses, each required to anchor its findings in something real, plus a
-facilitator that sequences quieter perspectives before the dominant one so early findings
-don't anchor everything that follows. Capture can be manual (LOG mode) or automatic (a
-Stop hook that extracts marker lines from the transcript, no LLM call).
+`retrospective` keeps an append-only journal per project and turns it into a retro run by a
+fixed panel of lenses. Every finding needs an anchor (a journal line, a file, a diff or a
+log entry), and a facilitator takes the quieter perspectives before the dominant one so the
+first findings do not set the direction for the rest. Each retro ends with owned actions,
+and the next retro starts by reconciling them, so retros build on each other. The journal is
+filled by hand (LOG mode) or by a Stop hook that extracts marked lines from the transcript
+without any model call.
 
 | | |
 |---|---|
-| **Protocol** | v1.11 |
-| **Modes** | LOG, RUN (T1/T2/T3), ACTIONS, LITE |
-| **Capture** | manual, or automatic via `scripts/retro_capture.py` (regex, stdlib only) |
-| **Lenses** | 8 standing, each capped at 3 anchored findings |
-| **Depends on** | nothing (LITE and the finance lens pair optionally with `critique`/`handoff`) |
-| **Ships** | complete: protocol, panel reference, capture hook, all with real production use behind them |
+| Protocol | v1.11 |
+| Run it with | `/retrospective run <slug>` (also `log`, `actions` and `lite`) |
+| Modes | LOG, RUN (tiers T1, T2 and T3), ACTIONS, LITE |
+| Capture | by hand, or automatic through `scripts/retro_capture.py` (regex, standard library only) |
+| Lenses | 8 standing lenses, each capped at 3 anchored findings |
+| Depends on | nothing; LITE and the finance lens pair optionally with `critique` and `handoff` |
 
-## Contents
+## Quick start
 
-- [From a marker line to a panel finding](#from-a-marker-line-to-a-panel-finding)
-- [Marker vocabulary](#marker-vocabulary)
-- [Automatic capture: scripts/retro_capture.py](#automatic-capture-scriptsretro_capturepy)
-- [Storage](#storage)
-- [Ground rules (binding at every RUN tier)](#ground-rules-binding-at-every-run-tier)
-- [ACTIONS mode](#actions-mode)
-- [LITE mode](#lite-mode)
-- [Adapting this skill](#adapting-this-skill)
-- [Files](#files)
+```bash
+cp -r retrospective ~/.claude/skills/      # or ./install.sh retrospective from the repo root
+```
 
-## From a marker line to a panel finding
+During a session, write marked lines such as `DECISION: move the nightly job to 04:00 |
+expect: no lock timeouts this week`. At the end of the week, run `/retrospective run
+<project>` and the skill picks the tier from the number of journal lines.
 
-Colour tracks scale: T1 to T3 get lighter-to-darker as the panel grows, LITE (green) is
-a different path entirely, triggered by a paired skill rather than chosen by size.
+## From a marked line to a panel finding
+
+Each tier has its own colour, and LITE (green) is a separate path that a paired skill
+triggers when its own condition fires.
 
 ```mermaid
 flowchart LR
@@ -63,13 +63,13 @@ flowchart LR
     class LITE lite
 ```
 
-Pick a tier by stakes and scope, not by habit. A T3 panel on a routine weekly check-in is
-wasted structure; a T1 mini-retro on a project close-out under-serves the questions that
-actually need a debate.
+Match the tier to the stakes. A T3 panel on a routine weekly check-in spends structure the
+week does not need, and a T1 mini-retro on a project close-out leaves the questions that
+need a debate unasked.
 
 ## Marker vocabulary
 
-Five line types, written at the start of a line (leading whitespace or a bullet is fine):
+Five line types, each written at the start of a line (leading spaces or a bullet are fine):
 
 ```
 DECISION: <text> | expect: <expected outcome>   (expect required)
@@ -79,20 +79,19 @@ FRICTION: <text>
 WIN: <text>
 ```
 
-Typed by hand in LOG mode, or extracted automatically from the transcript by the Stop
-hook: `DECISION` only from what the user actually wrote (never inferred from assistant
-text), `EVENT`/`RESULT`/`FRICTION`/`WIN` from either user or assistant turns. A `DECISION`
-with no `| expect:` clause anywhere in the transcript gets queued as a question instead of
-guessed at, and the hook blocks the session's stop once so it can be asked before ending.
+The Stop hook takes `DECISION` lines only from what the user wrote, and takes the other four
+from either side of the conversation. A `DECISION` with no `| expect:` clause anywhere in
+the transcript is queued as a question, and the hook blocks the session's stop once so the
+question can be asked before the session ends.
 
-## Automatic capture: `scripts/retro_capture.py`
+## Automatic capture with `scripts/retro_capture.py`
 
-A `Stop` hook, stdlib only, no network call, no LLM call. Deterministic regex extraction,
-not model-based summarisation: same input, same output, every time, and nothing to audit
-for hallucinated markers.
+A `Stop` hook that uses the standard library only and makes no network or model call. The
+same transcript always gives the same journal lines, so there is no invented marker to
+audit for.
 
-**Register it** in `settings.json` (merge into the `hooks` object if you already run
-other hooks; entries merge across settings levels rather than replacing):
+Register it in `settings.json`, merging into the `hooks` object if you already run other
+hooks (entries merge across settings levels):
 
 ```json
 {
@@ -100,7 +99,7 @@ other hooks; entries merge across settings levels rather than replacing):
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "args": ["python3", "/absolute/path/to/skills/retrospective/scripts/retro_capture.py"], "timeout": 30 }
+          { "type": "command", "command": "python3", "args": ["/absolute/path/to/skills/retrospective/scripts/retro_capture.py"], "timeout": 30 }
         ]
       }
     ]
@@ -108,26 +107,24 @@ other hooks; entries merge across settings levels rather than replacing):
 }
 ```
 
-Use an absolute path and the `args` form (an argument array, not the `command` string
-form: the two are mutually exclusive, a hook setting both is rejected at config load)
-for the same reason `handoff`'s hook does: a bare `~` doesn't expand under PowerShell,
-and the array form needs no quoting for paths with spaces.
+With `args` present, Claude Code runs `command` directly with no shell (the exec form in
+the [hooks reference](https://code.claude.com/docs/en/hooks)). Use an absolute path in
+`args`, since no shell expands a bare `~`, and paths with spaces need no quoting. On
+Windows, set `command` to `python`, because exec form needs a real executable.
 
-**What it writes, and where:** one journal line per extracted marker, capped at 20 per
-session, to `<project>/.claude/retro-log/journal/<slug>.jsonl`, where `<project>`
-resolves from `$CLAUDE_PROJECT_DIR` or the hook's own `cwd` input. Slug defaults to the
-project directory name; override with `RETRO_SLUG` for a name that doesn't match the
-folder. Claude Code fires `Stop` at the end of every turn, not once per session, so the
-hook deduplicates per session: it reads the whole journal, skips any marker already
-written under the current session id, and writes only new ones. A marker typed in the
-last turn of a long session is captured; a marker seen on ten turns is written once.
+The hook writes one journal line per marker, at most 20 per session, to
+`<project>/.claude/retro-log/journal/<slug>.jsonl`. `<project>` comes from
+`$CLAUDE_PROJECT_DIR` or the hook's own `cwd`, and the slug defaults to the project folder
+name (set `RETRO_SLUG` to override it). Claude Code fires `Stop` at the end of every turn,
+so the hook deduplicates by session and skips any marker already written under the
+current session id. A marker typed in the last turn of a long session is captured, and a marker
+seen on ten turns is written once.
 
-**When a session's transcript holds no marker at all**, one `zero-extract` line per
-session goes to `retro-log/capture-errors.log` rather than the hook staying silent. That distinction
-matters: a hook that fires but writes nothing looks identical to a broken hook from the
-outside. In this skill's own development, that exact gap went undetected until the
-diagnostic path was added in the hook's own v2.4, now v2.5 (see the version history in
-`scripts/retro_capture.py`'s module docstring).
+When a session's transcript holds no marker at all, the hook writes one `zero-extract` line
+to `retro-log/capture-errors.log`. A hook that fires and writes nothing otherwise looks
+exactly like a broken one, and that gap went unnoticed in this skill's own development
+until hook v2.4 added the diagnostic (the hook is now at v2.5, with the history in its
+module docstring).
 
 ## Storage
 
@@ -140,63 +137,61 @@ diagnostic path was added in the hook's own v2.4, now v2.5 (see the version hist
   capture-errors.log        hook diagnostics: true failures and zero-extract firings
 ```
 
-`global` is a reserved slug for a cross-project retro: it reads the retro *documents* (not
-journals) of the project roots named at invocation, and writes its own document into the
-invoking project's `<notes-root>/retros/`. Known limitation, stated in `SKILL.md`: RUN mode
-currently reads one root at a time, so a `global` retro covers the invoking project's root
-only, until R1 is rewritten to iterate the named list.
+`global` is a reserved slug for a cross-project retro. It reads the invoking project's root,
+as RUN does for every slug, and writes its document to `retros/` in that
+project's notes folder.
 
-## Ground rules (binding at every RUN tier)
+## Ground rules for every RUN tier
 
-Kerth's Prime Directive: assume every decision was the best available given what was
-known at the time. A decision is judged against its own `expect` field, not against the
-outcome, so a good decision with a bad outcome and a bad decision with a good outcome are
-both named as such rather than scored by hindsight. Every finding needs an anchor: a
-journal line, a file, a diff, a log entry; a finding with no anchor is dropped. The
-5-minute test: if it stays unclear what exactly would change after brief examination, the
-finding is too vague to keep. Wins get equal weight to findings, named with the mechanism
-that produced them so they're kept on purpose, not by accident.
+The panel works under Kerth's Prime Directive, which assumes everyone did the best they
+could with what they knew at the time. A decision is judged against its own `expect`
+field, so a good decision with a bad outcome and a bad decision with a good outcome are each
+named for what they were. Every finding needs an anchor (a journal line, a file, a diff or
+a log entry), and a finding without one is dropped. A finding whose required change stays
+unclear after brief examination is rewritten or dropped. Wins get the same weight as defects and are
+named with the mechanism that produced them, so they can be repeated on purpose.
 
-## ACTIONS mode
+## ACTIONS and LITE modes
 
-`actions [slug|all] [--overdue]`: last-line-wins status per action id, sorted by due
-date. No analysis beyond listing and flagging overdue items.
+`actions [slug|all] [--overdue]` lists each action's latest status, sorted by due date, and
+flags the overdue ones.
 
-## LITE mode
-
-Bounded mini-retro invoked from a paired review or handoff skill. `references/lite.md`
-has the exact trigger test (a journal with recent activity is not enough on its own; the
-condition needs a second signal, such as a critique finding recurring across runs or a
-handoff's PATTERN section being non-empty) and the protocol: derive the slug, write up to
-12 journal lines, append at most one action, report back in one line. Never opens the
-full RUN machinery, never convenes the panel.
+LITE is a bounded mini-retro that a review or handoff skill invokes. `references/lite.md`
+holds the trigger test, which needs a second signal beyond recent journal activity (such as
+a critique finding that recurs across runs, or a handoff whose PATTERN section is filled),
+and the protocol: derive the slug, write up to 12 journal lines, append at most one action
+and report back in one line. LITE never convenes the panel.
 
 ## Adapting this skill
 
-**Wire the hook, or don't.** Automatic capture is optional; LOG mode alone (typed
-markers, or a manual end-of-session sweep) is a complete way to use this skill without
-installing `scripts/retro_capture.py` at all.
+### Capture
 
-**The finance lens's anchoring rule is tool-agnostic**, per `references/panel.md`. It
-names a paired skill's proxy stats (the `critique` skill's counters block, for example)
-as one admissible cost source, but doesn't require that skill to be installed; point it
-at your own tooling's proxy metrics, or let it fall back to timestamp-based timing.
+The hook is optional. LOG mode alone, with typed markers or a manual sweep at the end of a
+session, is a complete way to use the skill.
 
-**To add a persona**, define it in your project config with a `name` and a `mandate`,
-following the worked example at the bottom of `references/panel.md`. It competes for a
-lens slot like any standing lens, under the same 3-finding, anchors-mandatory rules.
+### The finance lens
 
-**To change the lens set**, edit `references/panel.md` directly. Each lens is a
-self-contained block of standing questions; changing one doesn't affect the others.
+The finance lens anchors cost findings in whatever proxy data exists, as
+`references/panel.md` sets out. It accepts the `critique` counters block as one source
+without requiring `critique`, so you can point it at your own tooling's metrics or let it
+fall back to timestamp-based timing.
+
+### Personas and lenses
+
+To add a persona, define it in your project config with a `name` and a `mandate`, following
+the worked example at the bottom of `references/panel.md`. It competes for a lens slot under
+the same rules as a standing lens (three findings at most, every one anchored). To change
+the lens set, edit `references/panel.md`; each lens is a self-contained block of standing
+questions.
 
 ## Files
 
 ```
-SKILL.md                    LOG/RUN/ACTIONS/LITE modes, storage schema, ground rules
-references/panel.md         facilitator protocol + 8 lenses + project-persona extension point
+SKILL.md                    LOG, RUN, ACTIONS and LITE modes, storage schema, ground rules
+references/panel.md         facilitator protocol, 8 lenses and the project-persona extension point
 references/lite.md          the LITE trigger test and protocol, for paired skills
 references/formats.md       the retro document template
-scripts/retro_capture.py    Stop hook: deterministic marker extraction, no LLM call
+scripts/retro_capture.py    Stop hook: deterministic marker extraction, no model call
 evals/evals.json            three regression cases, fixtures in evals/fixtures/
-evals/results-2026-10.md    one recorded run of those cases, with and without the skill
+evals/results-2026-10.md    one run per case, with and without the skill, on an earlier version
 ```

@@ -1,35 +1,35 @@
 # handoff
 
-**A schema for what happened, so "here's where we left off" stops meaning "trust me."**
+**A schema for the end of a session, so "here's where we left off" can be checked.**
 
-A structured end-of-session state snapshot, in place of a prose recap. The schema exists
-because prose doesn't force you to separate a decision you made from a suggestion you
-reacted well to. A few sessions later, those read the same, and a plan you never actually
-committed to starts getting treated as settled.
+`handoff` writes a session's state as a structured snapshot that the next session reads on
+its first turn. Prose lets a decision you made and a suggestion you liked read the same, and a few
+sessions later a plan nobody committed to starts being treated as settled. The schema
+keeps them in separate labelled sections, and a linter checks the snapshot against the
+rules.
 
 | | |
 |---|---|
-| **Protocol** | v3.4, 8 labelled sections, pipe-delimited fields, no prose |
-| **Toolkit** | `tools/measure_savings.py` (lint, state-check, compare); `tools/session_watch.py` (optional session-length hook) |
-| **Tests** | pass; run `python -m pytest -q` for the current count |
-| **Depends on** | nothing (PATTERN sourcing and the closing review step pair optionally with `critique`/`retrospective`) |
-| **Ships** | complete |
+| Protocol | v3.4, eight labelled sections, pipe-delimited fields, no prose |
+| Run it with | `/handoff [next objective]` |
+| Toolkit | `tools/measure_savings.py` (lint, state check, compare) and `tools/session_watch.py` (optional session-length hook) |
+| Tests | 55, run with `python -m pytest -q` in `tools/` |
+| Depends on | nothing; pairs optionally with `critique` and `retrospective` |
 
-## Contents
+## Quick start
 
-- [From a long session to the next one acting correctly on turn one](#from-a-long-session-to-the-next-one-acting-correctly-on-turn-one)
-- [The schema](#the-schema)
-- [Why this shape](#why-this-shape)
-- [Tools: measure_savings.py](#tools-measure_savingspy)
-- [Tools: session_watch.py](#tools-session_watchpy)
-- [Insights from prior use](#insights-from-prior-use)
-- [Files](#files)
+```bash
+cp -r handoff ~/.claude/skills/            # or ./install.sh handoff from the repo root
+```
 
-`example-handoff.md` is a sanitized worked example that passes the linter below.
+At the end of a session in Claude Code, run `/handoff "finish the parity report"`. The
+snapshot goes to `handoffs/` in your notes folder (see [Where files go](../README.md#where-files-go)),
+and the next session reads it on its first turn. `example-handoff.md` is a sanitised worked
+example that passes the linter.
 
-## From a long session to the next one acting correctly on turn one
+## From a long session to a correct first turn
 
-The two highlighted nodes are where each loop actually closes.
+The two green nodes are where each loop closes.
 
 ```mermaid
 flowchart LR
@@ -43,167 +43,140 @@ flowchart LR
     class RS,C closes
 ```
 
-Two loops close here: the next session verifies it actually absorbed the state before
-acting, and the snapshot itself gets reviewed rather than trusted on the strength of its
-own formatting.
+The next session restates the state it read before it acts, and a review skill checks the
+snapshot itself, so neither side trusts the format alone.
 
 ## The schema
 
 ```
 STATE          <=8 lines: paths (with version + line/byte counts), then installs, then running processes
-DECIDED        <=10 lines: things actually committed to (high bar: a liked suggestion isn't a decision)
+DECIDED        <=10 lines: things actually committed to (a liked suggestion stays in PROPOSED)
 PROPOSED       <=6 lines: suggestions on the table, not yet committed
 REJECTED       <=5 lines: options considered and dropped, with why
 OPEN           <=5 lines: questions blocking a specific next step, naming what they block
 UNVERIFIED     <=5 lines: claims carried forward that were never independently rechecked
 PATTERN        <=3 lines: recurring corrections, with an occurrence count
-FIRST          1 line: the exact next action, singular, specific enough to execute directly
+FIRST          1 line: the exact next action, specific enough to execute directly
 ```
 
-Labeled lines, pipe-delimited fields, no prose paragraphs, no markdown headers. See
-`SKILL.md` for the exact per-section line shape and the full rule set.
+Every section is a set of labelled, pipe-delimited lines. `SKILL.md` has the exact line
+shape for each section and the full rule set.
 
 ## Why this shape
 
-**DECIDED vs. PROPOSED** is the distinction that does the most work. It's tempting to
-write "we're doing X" the moment an idea lands well in conversation, but that collapses
-two different things: a firm commitment, and an option that was well-received. The
-protocol's own wording is blunt about this: fail toward under-claiming, and mark genuinely
-unclear origin as `origin-uncertain` rather than guessing.
+DECIDED and PROPOSED carry the most weight. Once an idea lands well in conversation it is
+tempting to write "we're doing X", which merges a firm commitment with an option that was
+merely well received. The protocol tells the author to err towards PROPOSED and to mark an
+unclear origin as `origin-uncertain`.
 
-**UNVERIFIED** exists for long sessions specifically. `SKILL.md`'s own rule requires a
-line stating the snapshot was authored under context degradation whenever a session runs
-past roughly 30 turns. `tools/measure_savings.py --lint` checks that this line actually
-got written, rather than trusting it happened.
+UNVERIFIED exists for long sessions. Past roughly 30 turns, `SKILL.md` requires a line
+stating that the snapshot was written under context degradation, and
+`tools/measure_savings.py --lint` checks that the line is there.
 
-**PATTERN** is what makes handoffs additive across a project instead of each one starting
-cold, and it has a documented payoff: where a paired review/critique skill's findings log
-exists, reading it for defects that recur across two or more runs gives you cross-session
-pattern detection for free, since the log already exists and nothing else was reading it.
+PATTERN makes handoffs add up across a project. Where a review skill keeps a findings log,
+reading it for defects that recur across two or more runs gives cross-session pattern
+detection from a log that already exists.
 
-## Tools: measure_savings.py
+## measure_savings.py
 
-The protocol makes a claim it flags as unverified: "estimated 30 to 40 percent fewer
-tokens than prose... unmeasured", and a separate instruction it has no way to check on
-its own: "compute [STATE line/byte counts]; do not estimate." Both are exactly the kind
-of claim this repo's philosophy says shouldn't stay in prose. `tools/measure_savings.py`
-closes both loops, plus a few structural checks the protocol states but doesn't enforce:
+The protocol makes two claims it cannot check by itself. It estimates "30 to 40 percent
+fewer tokens than prose" and labels that unmeasured, and it tells the author to compute
+STATE's line and byte counts and never estimate them. `measure_savings.py` checks both, plus
+the structural rules the protocol states. No measured saving is published here yet, so
+treat the 30 to 40 percent estimate as unverified until `--compare` has run on your own
+snapshots.
 
 ```bash
 cd tools
-pip install pytest --break-system-packages   # or without the flag, depending on your environment
-python -m pytest -q                          # 55 tests across both tools
+python -m pytest -q                          # pip install pytest first if you need it
 
-# Structural checks: section caps, FIRST singularity, header shape, and the
-# long-session UNVERIFIED rule
+# Section caps, a single FIRST line, header shape and the long-session UNVERIFIED rule
 python measure_savings.py your-handoff.md --lint
 
-# Recompute STATE's claimed line/byte counts against the actual files on disk,
-# flagging drift instead of trusting what was written
+# Recompute STATE's line and byte counts from the files on disk and flag any drift
 python measure_savings.py your-handoff.md --state-check --base-dir /path/to/project
 
-# Turn "30-40%, unmeasured" into an actual number against a paired prose document
-# covering the same content (both estimated with one fixed characters-per-token
-# constant, which gives a comparable figure and is not a real tokenizer count)
+# Measure the saving against a prose recap of the same content (both use one fixed
+# characters-per-token constant, which gives a comparable estimate; a real tokeniser count is more exact)
 python measure_savings.py your-handoff.md --compare prose-equivalent.md
 ```
 
-`--state-check` only verifies path-shaped STATE rows (the ones with a version and
-`<n>L <n>B`); install and process rows have nothing on disk to check against and are
-skipped.
+`--state-check` verifies the path rows in STATE (those with a version and `<n>L <n>B`).
+Install and process rows have nothing on disk to check, so it skips them.
 
-## Tools: session_watch.py
+## session_watch.py
 
-Answers "can something tell me when the session is getting long enough that I should
-write a handoff and start fresh?": a `UserPromptSubmit` hook that counts turns
-deterministically and states the count at 25 turns (soft) and 35 (direct).
+A `UserPromptSubmit` hook that counts turns in code and states the count at 25 turns and
+again at 35, so you know when to write a handoff and start fresh. A `CLAUDE.md` rule alone
+cannot do this, because the assistant has no turn counter and its sense of elapsed
+conversation is the faculty that degrades as a session grows. The hook detects, and
+`CLAUDE.md` says what to do once the signal arrives.
 
-The design point worth stating: this cannot be a `CLAUDE.md` rule alone. An instruction
-like "tell me when this is getting long" asks the assistant to self-assess session
-length, but it has no turn counter, and its sense of elapsed conversation is precisely
-the faculty that degrades as the session grows. Detection belongs in code; `CLAUDE.md`
-only says what to do once the signal arrives.
+Four constraints from the [Claude Code hooks reference](https://code.claude.com/docs/en/hooks)
+shaped the code:
 
-Four constraints from Anthropic's hooks reference shaped the implementation, and each
-one changed the code:
+- The hook prints plain text, which Claude Code adds to the context on this event. Stdout
+  that fails to parse is dropped, so plain text is the safer channel.
+- Every message is a statement of fact. The reference warns that text framed as a system
+  command can trip prompt-injection defences, so the instruction itself lives in
+  `CLAUDE.md`.
+- The hook stays well inside its 30-second timeout. It prefilters transcript lines by
+  substring before parsing any JSON, and it exits without opening the file once its last
+  threshold has fired.
+- The transcript lags the live conversation, so the count is a floor and every message
+  says "at least".
 
-- **Plain text, not JSON.** For this event stdout is added to context directly, and a
-  known Claude Code issue surfaces a hook error to the user when `UserPromptSubmit`
-  returns `hookSpecificOutput` JSON on a session's first prompt. Plain text avoids it
-  and is officially supported here.
-- **Factual phrasing, not imperative.** The reference warns that text framed as an
-  out-of-band system command can trip prompt-injection defenses, causing the assistant
-  to show it to you instead of acting on it. Every emitted string is a statement of
-  fact; the instruction lives in `CLAUDE.md`.
-- **A 30-second timeout, blocking model processing.** The transcript is never fully
-  JSON-parsed: lines are substring-prefiltered first, and the hook exits before opening
-  the file at all once its last threshold has fired. Measured: 10.4 MB / 300-turn
-  transcript counted in 33 ms, full invocation 68 ms.
-- **The transcript lags the live conversation**, so the count is a floor. Messages say
-  "at least".
-
-It also had to be `UserPromptSubmit` rather than `Stop`: a Stop hook fires when the
-session is already ending, too late to suggest wrapping up.
+It runs on `UserPromptSubmit` because that event adds the hook's output to the context
+before the model answers, while a `Stop` hook runs after the reply has been written.
 
 ```bash
-python -m pytest -q          # 55 tests across both tools
-
-# Verify installation (silent-by-design means broken and working look identical
-# until turn 25, so check explicitly):
+# Check the install with a real transcript path, since a working hook and a broken one
+# both stay silent until turn 25
 echo '{"transcript_path":"/path/to/transcript.jsonl","session_id":"test"}' \
   | HANDOFF_WARN_TURNS=1 python3 tools/session_watch.py
 ```
 
-Swap in a real transcript path: Claude Code writes them under
-`~/.claude/projects/<project-slug>/*.jsonl`, and any real one works. The placeholder path
-above produces the same silent, exit-0 output as a broken install, which is exactly the
-ambiguity the next paragraph describes.
+Claude Code writes transcripts under `~/.claude/projects/<project-slug>/*.jsonl`, and any
+real one works. The placeholder path above gives the same silent exit as a broken install.
 
 > [!NOTE]
-> The hook fails open on every error path (malformed input, missing transcript,
-> unwritable state directory), because a hook that raises could interfere with prompt
-> submission. That safety property is also what makes silent failure possible, which is
-> why `CLAUDE_md-snippet.md` ships a verification command and says when to re-run it.
+> The hook fails open on every error path (malformed input, a missing transcript, an
+> unwritable state directory), because a hook that raises could block prompt submission.
+> The same property makes silent failure possible, which is why `CLAUDE_md-snippet.md`
+> ships a verification command and says when to run it again.
 
-## Insights from prior use
+## Lessons from using it
 
-Patterns from real sessions using this skill and the others in this repository:
-
-- **Stating a savings or effort figure without measuring it** recurred across multiple
-  sessions. This skill's own "30-40%, unmeasured" line is that pattern caught in the
-  act, which is why `--compare` exists now rather than leaving the claim open.
-- **Applying review rules to reviewed files while exempting the reviewer's own output**
-  recurred too. It's why this skill's own example gets linted rather than trusted, and
-  when it was, the shipped example failed on two counts (an invalid `session-length`
-  value and a three-line `FIRST` against a cap of one).
-- **The wrapper gets less scrutiny than the payload.** Two installer defects shipped
-  this way in a prior session, both caught only after install. The hook here is wrapper
-  code by that definition, so its test suite covers the failure paths (malformed stdin,
-  missing transcript, unwritable state dir) more heavily than its happy path.
-- **Silent-failure-by-design is a real risk, not a theoretical one.** A journal-capture
-  Stop hook in another skill failed silently in a prior session and was noticed only
-  when a downstream file showed a stale date. Any hook that fails open needs an explicit
-  verification step, which is why `CLAUDE_md-snippet.md` ships one.
-- **Two proposals surfaced twice and were never applied** until this pass: writing the
-  snapshot around two-thirds through a session rather than at the end, and having the
-  next session restate STATE before acting. Both are now rules in `SKILL.md`. A
-  suggestion re-derived across sessions without ever landing is the exact waste the
-  `critique` skill's promotion tracking exists to catch, appearing here in the handoff
-  skill's own history.
-- **The original design conclusion still holds**: a handoff transfers state rather than
-  judging it, so multi-persona authoring multiplies tokens without producing orthogonal
-  content. The win came from the schema, not from more sections or more voices.
+- Savings figures were stated without measurement across several sessions. This skill's
+  own "30 to 40 percent, unmeasured" line was one of them, and `--compare` exists to turn
+  it into a number.
+- Review rules were applied to other files while the reviewer's own output went unchecked.
+  When this skill's example snapshot was finally linted, it failed twice, with an invalid
+  `session-length` value and a three-line FIRST against a cap of one.
+- Wrapper code got less scrutiny than the payload, and two installer defects shipped that
+  way. The hook counts as wrapper code, so its tests cover the failure paths (malformed
+  stdin, a missing transcript, an unwritable state directory) more heavily than the
+  normal path.
+- A journal-capture Stop hook in another skill failed silently and was noticed only when a
+  downstream file showed a stale date. Any hook that fails open now ships with an explicit
+  verification step.
+- Two proposals surfaced twice without being applied: write the snapshot about two-thirds
+  of the way through a session, and have the next session restate STATE before acting.
+  Both are now rules in `SKILL.md`.
+- A handoff transfers state and leaves judgement to the review step, so authoring it with
+  several personas multiplied tokens without adding content. The schema is what made it
+  work.
 
 ## Files
 
 ```
 SKILL.md                        the protocol
-example-handoff.md              a worked example that passes measure_savings.py --lint
-CLAUDE_md-snippet.md            session-length coordination: config, registration, verification
-tools/measure_savings.py        lint, state-check, compare
+example-handoff.md              a sanitised worked example that passes measure_savings.py --lint
+CLAUDE_md-snippet.md            session-length set-up: config, hook registration, verification
+tools/measure_savings.py        lint, state check, compare
 tools/session_watch.py          UserPromptSubmit hook: turn counting and handoff signals
 tools/test_measure_savings.py   23 tests
 tools/test_session_watch.py     32 tests
 evals/evals.json                three regression cases, fixtures in evals/fixtures/
-evals/results-2026-10.md        one recorded run of those cases, with and without the skill
+evals/results-2026-10.md        one run per case, with and without the skill, on an earlier version
 ```
