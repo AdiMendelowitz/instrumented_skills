@@ -1,1 +1,0 @@
-Only the main target of orders_daily moved to analytics_v2; its fallback still points at analytics_v1.

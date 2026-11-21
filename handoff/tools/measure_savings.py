@@ -4,8 +4,8 @@ The handoff protocol makes three claims that were previously self-reported by wh
 model wrote the snapshot, rather than verified: that the labeled-line format saves 30-40%
 of tokens against prose ("unmeasured"), that STATE line/byte counts are computed rather
 than estimated, and that a long session's UNVERIFIED section actually gets the required
-context-degradation line. This module checks all three deterministically, the same
-principle token-aware applies to cost arithmetic: a claim a protocol makes about numbers
+context-degradation line. This module checks all three deterministically, on the
+principle that a claim a protocol makes about numbers
 should be checked in code, not trusted in prose.
 
 Subcommands: lint, state-check, compare.
@@ -41,7 +41,7 @@ STATE_PATH_ROW_RE = re.compile(
     r"^(?P<path>[^|]+?)\s*\|\s*v(?P<version>\S+)\s*\|\s*(?P<lines>\d+)L\s+(?P<bytes>\d+)B\s*\|"
 )
 
-CHARS_PER_TOKEN = 3.5  # same constant family as token-aware, for a comparable estimate
+CHARS_PER_TOKEN = 3.5  # fixed characters-per-token constant, for a comparable estimate
 
 
 @dataclass
@@ -163,7 +163,7 @@ def state_check(parsed: ParsedHandoff, base_dir: Path) -> list[str]:
     for row in parsed.sections.get("STATE", []):
         m = STATE_PATH_ROW_RE.match(row)
         if not m:
-            continue  # not a path row (install or process row): nothing to verify
+            continue  # not a path row (install or process row) — nothing to verify
         raw = m.group("path").strip()
         path = _resolve_state_path(raw, base_dir)
         claimed_lines, claimed_bytes = int(m.group("lines")), int(m.group("bytes"))
@@ -177,14 +177,14 @@ def state_check(parsed: ParsedHandoff, base_dir: Path) -> list[str]:
         if actual_lines != claimed_lines or actual_bytes != claimed_bytes:
             findings.append(
                 f"{raw}: snapshot claims {claimed_lines}L {claimed_bytes}B, "
-                f"actual is {actual_lines}L {actual_bytes}B, file changed since the "
+                f"actual is {actual_lines}L {actual_bytes}B — file changed since the "
                 f"snapshot was written, or the count was estimated rather than computed"
             )
     return findings
 
 
 def estimate_tokens(text: str) -> int:
-    """Same estimation family as token-aware's tools/cost.py, for a comparable figure."""
+    """Character-based estimate with a fixed constant, for a comparable figure."""
     return int(len(text) / CHARS_PER_TOKEN)
 
 

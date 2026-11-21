@@ -2,7 +2,7 @@
 
 One domain per call, deliberately. A cross-domain search would rank a critique
 finding against a retro entry against a handoff line on a shared relevance
-scale that does not mean anything, and a merged index is a deliberate
+scale that does not mean anything, and the plan declares a merged index a
 non-goal.
 
 Output is JSON on stdout, not prose. The caller is a skill's own protocol,
@@ -48,7 +48,7 @@ def search_domain(
     Dropping zero scores matters: BM25 returns a score for every chunk, so
     without this a query sharing no terms with the corpus still returns top_k
     results that look like hits. An empty list is the honest answer, and the
-    degradation contract depends on "no results" being distinguishable from
+    plan's degradation rule depends on "no results" being distinguishable from
     "no index".
     """
     tokens = tokenize(query)

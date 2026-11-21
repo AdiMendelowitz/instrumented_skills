@@ -1,1 +1,0 @@
-Add a migration to the shared migrations folder that adds a nullable invoice_ref text column to the invoices table. Write the file name of the new migration, and nothing else, to out/migration_name.txt.

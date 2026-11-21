@@ -1,1 +1,0 @@
-Customer ids are matched after stripping spaces only, not after casefolding, so lower-case ids such as c-0101 and c-0105 match no customer: their seats and plan counts are lost and unmatched_active_subscriptions reads 7 instead of 2.

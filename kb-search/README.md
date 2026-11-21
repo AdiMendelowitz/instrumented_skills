@@ -11,12 +11,12 @@ depends on nothing outside the standard library.
 |---|---|
 | **Method** | BM25 ranking, JSON index cache (never pickle) |
 | **Tests** | `python -m pytest -q` in `tools/`, all pass (count not stated here on purpose, see below) |
-| **Depends on** | `token-aware/references/search_policy.md` (hard dependency, see below) |
+| **Depends on** | nothing outside its own folder; the search policy ships in `references/` |
 | **Ships** | complete |
 
 ## Contents
 
-- [Hard dependency](#hard-dependency)
+- [Search policy](#search-policy)
 - [What it does](#what-it-does)
 - [Install](#install)
 - [Adapting this skill](#adapting-this-skill)
@@ -27,17 +27,16 @@ already reconciles a target against its own last log entry; kb-search lets a run
 whether the same root cause has fired on any other target. A retro can check whether a
 long-horizon action from six weeks ago was ever carried out. A handoff can search prior
 snapshots for what a past session already settled. See the top-level
-[README](../README.md#how-the-skills-connect) for the full data-flow diagram across all
-five skills.
+[README](../README.md#how-the-skills-connect) for the full data-flow diagram across the
+skills.
 
-## Hard dependency
+## Search policy
 
 > [!WARNING]
-> kb-search defers one decision to `token-aware/references/search_policy.md`: when to
-> reach for it at all. That file is the gating rule (grep first; escalate to kb-search
-> only when grep is insufficient). Without it the skill gets reached for reflexively,
-> which is the failure it is most exposed to. Install `token-aware` alongside kb-search;
-> the repo-root installer warns if you do not.
+> kb-search defers one decision to `references/search_policy.md`, which is when to reach
+> for it at all. That file is the gating rule (grep first, and escalate to kb-search only
+> when grep is insufficient). Without it the skill gets reached for reflexively, which is
+> the failure it is most exposed to, so keep it in the folder when you copy or adapt it.
 
 ## What it does
 
@@ -60,10 +59,10 @@ is active and corpora live in different places (a retro journal under a project'
 ## Install
 
 Copy the folder to wherever your surface reads skills from, or use the repo-root install
-script (which installs `token-aware` too by default, so the policy dependency is present):
+script:
 
 ```bash
-cp -r kb-search ~/.claude/skills/          # or: ./install.sh kb-search token-aware
+cp -r kb-search ~/.claude/skills/          # or: ./install.sh kb-search
 ```
 
 The toolkit is standard-library only, so there is nothing to `pip install` to run it. For
@@ -95,9 +94,10 @@ machinery files outrank genuine content otherwise.
 ## Files
 
 ```
-SKILL.md              the protocol, output contract, and design notes
-tools/index.py        core (chunking, tokenisation, BM25, JSON cache) + build CLI
-tools/search.py       query entry point (always exits 0, status in JSON)
-tools/test_index.py   tests for the core and the build CLI
-tools/test_search.py  tests for ranking and the four degradation states
+SKILL.md                      the protocol, output contract, and design notes
+references/search_policy.md   when to grep and when to escalate to kb-search
+tools/index.py                core (chunking, tokenisation, BM25, JSON cache) + build CLI
+tools/search.py               query entry point (always exits 0, status in JSON)
+tools/test_index.py           tests for the core and the build CLI
+tools/test_search.py          tests for ranking and the four degradation states
 ```

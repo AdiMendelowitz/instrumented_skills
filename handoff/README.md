@@ -9,7 +9,7 @@ committed to starts getting treated as settled.
 
 | | |
 |---|---|
-| **Protocol** | v3.3, 8 labelled sections, pipe-delimited fields, no prose |
+| **Protocol** | v3.4, 8 labelled sections, pipe-delimited fields, no prose |
 | **Toolkit** | `tools/measure_savings.py` (lint, state-check, compare); `tools/session_watch.py` (optional session-length hook) |
 | **Tests** | pass; run `python -m pytest -q` for the current count |
 | **Depends on** | nothing (PATTERN sourcing and the closing review step pair optionally with `critique`/`retrospective`) |
@@ -103,8 +103,8 @@ python measure_savings.py your-handoff.md --lint
 python measure_savings.py your-handoff.md --state-check --base-dir /path/to/project
 
 # Turn "30-40%, unmeasured" into an actual number against a paired prose document
-# covering the same content (both estimated with the same char-per-token constant
-# token-aware's toolkit uses, for a comparable figure, not a real tokenizer count)
+# covering the same content (both estimated with one fixed characters-per-token
+# constant, which gives a comparable figure and is not a real tokenizer count)
 python measure_savings.py your-handoff.md --compare prose-equivalent.md
 ```
 
@@ -204,4 +204,6 @@ tools/measure_savings.py        lint, state-check, compare
 tools/session_watch.py          UserPromptSubmit hook: turn counting and handoff signals
 tools/test_measure_savings.py   23 tests
 tools/test_session_watch.py     32 tests
+evals/evals.json                three regression cases, fixtures in evals/fixtures/
+evals/results-2026-10.md        one recorded run of those cases, with and without the skill
 ```

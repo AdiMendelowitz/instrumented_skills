@@ -1,1 +1,0 @@
-Write out/price.json, the JSON body the storefront receives for a price of 12.50 pounds sterling. Put the amount in minor units in a field called amount_minor and the currency in a field called currency.

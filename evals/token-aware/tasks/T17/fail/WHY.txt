@@ -1,1 +1,0 @@
-The repeated O1004 row is not dropped, so C0042 counts three orders and its total is 151.58.

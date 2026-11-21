@@ -1,1 +1,0 @@
-A partner says the storefront file they received was missing about two hundred rows, and the load had to be reversed. Write a postmortem from the run log in run_log.txt, with a timeline, the partner and analyst impact, the root cause and follow-up actions with owners. Save it to out/answer.md.

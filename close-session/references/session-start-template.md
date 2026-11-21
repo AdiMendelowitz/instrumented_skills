@@ -1,7 +1,8 @@
 # Bundle: session-start-template
 
 Shape for Phase 4's output. Fill every bracket from the Phase 3 handoff; do not invent a field
-with no source.
+with no source. Modelled on this project's own `handoffs/next-session-prompt-v2.md`, not a new
+format.
 
 ```
 TARGET: <environment: local Claude Code at <absolute project root>, or Cowork/claude.ai

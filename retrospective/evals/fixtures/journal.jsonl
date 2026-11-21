@@ -1,0 +1,3 @@
+{"ts": "2026-10-01T08:00:00Z", "slug": "eval-project", "type": "decision", "txt": "Move the nightly job from 02:00 to 04:00 to avoid the backup window.", "expect": "No more lock timeouts within a week.", "links": [], "sid": "eval-s1", "src": "manual"}
+{"ts": "2026-10-04T09:30:00Z", "slug": "eval-project", "type": "result", "txt": "Two lock timeouts still occurred on 2026-10-03 and 2026-10-04.", "expect": null, "links": [], "sid": "eval-s2", "src": "manual"}
+{"ts": "2026-10-05T10:15:00Z", "slug": "eval-project", "type": "friction", "txt": "Finding the failing run took twenty minutes because the logs are split across two folders.", "expect": null, "links": [], "sid": "eval-s3", "src": "manual"}

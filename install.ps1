@@ -3,15 +3,15 @@
 # folder to %USERPROFILE%\.claude\skills\<name>, archiving whatever it replaces first.
 #
 # Usage:
-#   .\install.ps1                                   # installs all six skills
-#   .\install.ps1 -Skills critique,token-aware       # installs only the ones named
+#   .\install.ps1                                   # installs all five skills
+#   .\install.ps1 -Skills critique,kb-search         # installs only the ones named
 #
 # If Windows blocks the script (downloaded from a zip), unblock it first:
 #   Unblock-File .\install.ps1
 #   powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 param(
-    [string[]]$Skills = @("critique", "token-aware", "retrospective", "handoff", "kb-search", "close-session"),
+    [string[]]$Skills = @("critique", "retrospective", "handoff", "kb-search", "close-session"),
     [string]$Source = $PSScriptRoot,
     [string]$Destination = "$env:USERPROFILE\.claude\skills"
 )
@@ -27,12 +27,6 @@ if ($missing.Count -gt 0) {
     exit 1
 }
 Write-Host "  all requested skill folders present: $($Skills -join ', ')"
-
-# kb-search defers its grep-first gating rule to token-aware\references\search_policy.md.
-if (($Skills -contains "kb-search") -and -not ($Skills -contains "token-aware")) {
-    Write-Host "  NOTE: installing kb-search without token-aware. Its search policy" -ForegroundColor Yellow
-    Write-Host "        (token-aware\references\search_policy.md) is a hard dependency; install token-aware too."
-}
 
 # close-session composes retrospective/critique/handoff; it degrades gracefully without
 # them (runs each missing phase's shape inline, per its own SKILL.md), so this is informational.
@@ -65,25 +59,7 @@ foreach ($skill in $Skills) {
     }
     Copy-Item $from $to -Recurse -Force
     Write-Host "  installed $skill"
-    if (Test-Path (Join-Path $Source "$skill\references\destinations.md")) {
-        Copy-Item (Join-Path $Source "DESTINATIONS.md") (Join-Path $to "references\destinations.md") -Force
-        Write-Host "  synced $skill\references\destinations.md from DESTINATIONS.md"
-    }
 }
 
 Write-Host "`nDone. Read each skill's README.md for setup steps that can't be scripted"
-Write-Host "(filling in token-aware\tools\rates.json with current, verified rates, and"
-Write-Host "registering retrospective's and handoff's optional hooks if you want them)."
-
-if ($Skills -contains "token-aware") {
-    Write-Host "`nRunning token-aware's test suite as a sanity check:"
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    if ($python) {
-        Push-Location (Join-Path $Destination "token-aware\tools")
-        try {
-            & python -m pytest -q 2>&1 | Select-Object -Last 5
-        } finally { Pop-Location }
-    } else {
-        Write-Host "  SKIPPED: python not on PATH. Run 'python -m pytest -q' in token-aware\tools yourself."
-    }
-}
+Write-Host "(registering retrospective's and handoff's optional hooks if you want them)."

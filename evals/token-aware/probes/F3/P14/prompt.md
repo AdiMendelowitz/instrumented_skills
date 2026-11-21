@@ -1,1 +1,0 @@
-A new partner is being given access to the catalogue search endpoint. Set its rate limit: window size, limit per API key, the status code and headers returned when a caller goes over, and any exemption for internal callers. Save the policy to out/answer.md.

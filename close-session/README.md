@@ -9,7 +9,7 @@ shape a session with zero memory of this one can execute.
 
 | | |
 |---|---|
-| **Protocol** | v1.7, phases 1 to 4, one shared 2-round convergence cap |
+| **Protocol** | v1.14, phases 1 to 4, one shared 2-round convergence cap |
 | **Works with** | `retrospective`, `critique`, `handoff` (each phase runs that skill's protocol; where one is missing, the phase runs its shape inline and says so) |
 | **Toolkit** | none; the checks it needs live in `handoff/tools/measure_savings.py` |
 | **Writes** | retro, patched retro, handoff and session-start prompt to the project's `<notes-root>/{retros,handoffs,prompts}/`, per the DESTINATIONS block shared with those three skills |
@@ -19,6 +19,7 @@ shape a session with zero memory of this one can execute.
 - **`SKILL.md`**: the protocol. Environment detection, budget, the four phases, the save-and-verify rule, the 5-line close.
 - **`references/design-rationale.md`**: the evidence behind the choices, read once if a rule looks unmotivated.
 - **`references/session-start-template.md`**: the shape of the Phase 4 prompt.
+- **`evals/`**: three regression cases in `evals.json`, their fixtures, and one recorded run in `results-2026-10.md`.
 
 ## Adapting this skill
 

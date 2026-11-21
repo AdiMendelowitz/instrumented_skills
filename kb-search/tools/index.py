@@ -9,10 +9,10 @@ load; IDF computation is cheap enough that this costs nothing meaningful.
 Nothing here reaches the network and nothing calls an LLM. Standard library
 only: BM25 is implemented directly below rather than taken from rank_bm25.
 
-This reverses an earlier intent to depend on rank_bm25, on evidence found while
+That reverses plan v3's stated dependency exception, on evidence found while
 implementing it. rank_bm25's BM25Okapi uses the IDF variant
 log((N - n + 0.5) / (n + 0.5)), which is zero or negative once a term appears
-in half or more of the documents. On a two-file corpus a term in one file
+in half or more of the documents -- on a two-file corpus a term in one file
 scores exactly 0.0, and on a single-file corpus every score is negative. Those
 are the corpus sizes every consuming skill starts at. Its BM25Plus avoids that
 but adds a delta floor, scoring documents that do not contain the term above
@@ -175,19 +175,10 @@ def collect_chunks(domain_dir: Path) -> list[Chunk]:
 
     Recognition is by suffix. Unknown suffixes are skipped rather than read as
     text, so a stray binary in a corpus directory cannot poison the index.
-
-    Symlinks are never followed. `rglob` already does not descend into a
-    symlinked directory, but a symlink to a *file* still passes `is_file()`
-    and would otherwise be read through: a corpus placed under sync or
-    version control could carry a symlink pointing outside the domain
-    directory (a credentials file, another user's notes), and indexing it
-    would copy that file's content into the JSON cache and into search
-    results. Excluding symlinks keeps the walk confined to real files under
-    `domain_dir`.
     """
     chunks: list[Chunk] = []
     for path in sorted(domain_dir.rglob("*")):
-        if path.is_symlink() or not path.is_file():
+        if not path.is_file():
             continue
         rel_path = path.relative_to(domain_dir)
         if is_noise_path(rel_path.parts):
@@ -211,7 +202,7 @@ def source_hash(domain_dir: Path) -> str:
     h = hashlib.sha256()
     h.update(f"v{INDEX_VERSION}\n".encode())
     for path in sorted(domain_dir.rglob("*")):
-        if path.is_symlink() or not path.is_file():
+        if not path.is_file():
             continue
         if path.suffix.lower() not in (TEXT_SUFFIXES | JSONL_SUFFIXES):
             continue
@@ -231,7 +222,7 @@ class BM25:
 
     The classic variant drops the leading 1 and goes zero or negative once a
     term appears in half or more of the documents. On the corpus sizes these
-    skills start at, a handful of retro entries or handoff snapshots, that
+    skills start at -- a handful of retro entries or handoff snapshots -- that
     silently returns nothing for terms that plainly match. A document that does
     not contain a query term contributes exactly zero for it, so a query
     sharing no vocabulary with the corpus scores zero everywhere and "no
@@ -335,7 +326,7 @@ def get_or_build_index(domain_dir: Path, *, force: bool = False) -> tuple[Index,
 
     state is one of: "cached", "built", "rebuilt-stale", "rebuilt-corrupt".
     The caller reports it; a corrupt cache is rebuilt once rather than raised,
-    so a corrupt cache is a recoverable condition rather than a crash.
+    per the plan's three-state degradation rule.
     """
     if not domain_dir.is_dir():
         raise CorpusNotFound(f"no such domain directory: {domain_dir}")

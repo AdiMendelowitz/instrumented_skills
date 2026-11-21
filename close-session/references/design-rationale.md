@@ -22,7 +22,11 @@ equivalent, with no stated stopping point, in three separate places. `critique` 
 already-capped protocol multiplies cost without a matching return past the second pass, and
 directly works against the token-efficiency goal that motivated building this skill at all. One
 shared cap, stated once, is cheaper to reason about than three separately-worded unbounded
-instructions.
+instructions. Confirmed again 2026-09-16: a v1.5 critique run on this project's own
+retrospective-diagram-fix retro converged in round 1 (2 SEV2, 1 SEV3 found and patched or
+backlogged) with round 2 unneeded; a v1.6 self-critique of this skill's own Phase 4/Close edit
+did the same. Neither run has yet needed the cap to actually cut off unfinished work, which is
+the expected shape of a working cap, not evidence it should be removed.
 
 ## Why storage target gets chosen before anything is written
 

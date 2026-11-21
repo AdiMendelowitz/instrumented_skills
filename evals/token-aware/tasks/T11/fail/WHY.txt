@@ -1,1 +1,0 @@
-Buckets orders by the month written in placed_at (the first seven characters) instead of the UTC month, so orders near a month end with a UTC offset land in the wrong month (O-2001 at 2026-03-31T22:30-05:00 counts in March, not April), and the output has 21 rows instead of 23.

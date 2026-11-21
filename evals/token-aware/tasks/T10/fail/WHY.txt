@@ -1,1 +1,0 @@
-Off-by-one in the whole-word cut: rfind uses end bound max_len instead of max_len + 1, so a hyphen exactly at the limit is ignored and the slug is cut one word too early (test_cut_back_to_whole_words returns "alpha" instead of "alpha-beta").

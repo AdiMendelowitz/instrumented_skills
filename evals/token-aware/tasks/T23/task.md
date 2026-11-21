@@ -1,1 +1,0 @@
-In config/requirements.txt, upgrade pandas from 2.2.2 to 2.2.3 for the main runtime install, and leave the legacy pandas pin for older Python versions untouched. Add pydantic==2.8.2 as a new line at the end of the file. Leave every comment and every other line exactly as it is.

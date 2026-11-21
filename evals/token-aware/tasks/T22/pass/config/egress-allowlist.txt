@@ -1,9 +1,0 @@
-# Hostnames the reporting egress proxy may reach.
-# One host per line. Lines starting with # are comments.
-api.partner-feeds.example
-sftp.bank-export.example
-status.brindle.example
-# legacy-ftp.partner.example was retired in Q2; kept here for the audit trail
-hooks.metrics.example
-api.metrics.example
-reports.brindle.example

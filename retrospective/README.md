@@ -11,7 +11,7 @@ Stop hook that extracts marker lines from the transcript, no LLM call).
 
 | | |
 |---|---|
-| **Protocol** | v1.8 |
+| **Protocol** | v1.11 |
 | **Modes** | LOG, RUN (T1/T2/T3), ACTIONS, LITE |
 | **Capture** | manual, or automatic via `scripts/retro_capture.py` (regex, stdlib only) |
 | **Lenses** | 8 standing, each capped at 3 anchored findings |
@@ -196,6 +196,7 @@ SKILL.md                    LOG/RUN/ACTIONS/LITE modes, storage schema, ground r
 references/panel.md         facilitator protocol + 8 lenses + project-persona extension point
 references/lite.md          the LITE trigger test and protocol, for paired skills
 references/formats.md       the retro document template
-references/destinations.md  where documents and skill state go on each surface (shared with critique, handoff, close-session)
 scripts/retro_capture.py    Stop hook: deterministic marker extraction, no LLM call
+evals/evals.json            three regression cases, fixtures in evals/fixtures/
+evals/results-2026-10.md    one recorded run of those cases, with and without the skill
 ```

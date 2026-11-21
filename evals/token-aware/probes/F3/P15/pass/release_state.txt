@@ -1,2 +1,0 @@
-live: rel/notify/2026.10.18-2
-previous: rel/notify/2026.10.17-1

@@ -1,4 +1,4 @@
-# CLAUDE.md snippet: session-length coordination
+# CLAUDE.md snippet — session-length coordination
 
 Two halves. The hook counts turns and states the count as a fact. This snippet tells
 Claude what to do about that fact. The split is deliberate and matches Anthropic's own
@@ -32,7 +32,7 @@ injected by a hook that counts turns deterministically, not something I typed.
 
 Copy `session_watch.py` to `~/.claude/skills/handoff/tools/`, then add to
 `~/.claude/settings.json`. If you already run hooks (a `Stop` hook for journal capture,
-say), add this alongside them rather than replacing the `hooks` object: entries merge
+say), add this alongside them rather than replacing the `hooks` object — entries merge
 across settings levels.
 
 **Use an absolute path.** A bare `~` is expanded by `sh` and Git Bash but not by
@@ -62,7 +62,7 @@ macOS / Linux:
 }
 ```
 
-Windows: point `command` at a real `python.exe`, since a bare `python` can resolve to
+Windows — point `command` at a real `python.exe`, since a bare `python` can resolve to
 the Microsoft Store stub, which produces no output and no error:
 
 ```json
@@ -120,9 +120,9 @@ Transcripts live under `~/.claude/projects/<project-slug>/*.jsonl`; any real one
 Expected: one plain-text line beginning `Session state:`. Empty output with exit code 0
 means the transcript path was wrong or held no countable user turns. The hook fails open
 by design so it can never block a prompt, and that same property is what allows silent
-failure, so re-run this check after any Python upgrade, settings edit, or path change.
+failure — so re-run this check after any Python upgrade, settings edit, or path change.
 
-## Known behaviour worth expecting
+## Known behavior worth expecting
 
 - **The count is a floor.** Claude Code writes the transcript asynchronously, so it can
   lag the live conversation by a turn or two. Messages say "at least" for this reason.

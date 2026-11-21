@@ -1,1 +1,0 @@
-parse_amount strips only ordinary spaces, so non-breaking (U+00A0) and thin (U+2009) space thousands separators raise ValueError.

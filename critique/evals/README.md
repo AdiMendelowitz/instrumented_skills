@@ -1,8 +1,8 @@
 # Regression cases for critique
 
 When you change `SKILL.md` or a bundle, run the same set of targets through both the old
-and new version and compare, rather than judging a single run by eye. This is a harness
-pattern, not a fixed test file; build `evals.json` for your own targets. A minimal set
+and new version and compare, rather than judging a single run by eye. `evals.json`
+beside this file is a starting set; extend it with your own targets. A minimal set
 that catches most regressions:
 
 1. **A clean document.** Something you already trust has no real defects. The new
@@ -19,5 +19,7 @@ case reconciled by ID instead of re-deriving, output length, and tool-call count
 change that improves prose length at the cost of a missed planted defect is not an
 improvement.
 
-`evals.json` is intentionally not shipped with a fixed schema here. The three case types
-above are the contract, and the file format is whatever your harness reads.
+`evals.json` holds three further cases (an unsourced number, a word count that has to come
+from a command, and a planted instruction), with their documents in `fixtures/`, and
+`results-2026-10.md` records one run of them with and without the skill. The three case
+types above are the contract; the file format is whatever your harness reads.

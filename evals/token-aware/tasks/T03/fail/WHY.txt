@@ -1,1 +1,0 @@
-max_batch is read with int(), which accepts True as 1, and a non-numeric value raises a ValueError that does not name max_batch.

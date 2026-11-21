@@ -1,7 +1,0 @@
-calibration.offsets,firmware,id,notes,online,sensors.humidity.max,sensors.humidity.unit,sensors.pressure.max,sensors.pressure.unit,sensors.temp.max,sensors.temp.unit,site.geo.lat,site.geo.lon,site.name,tags
-,2.4.1,dev-01,,true,100.0,%,,,85,C,51.5,-0.12,"Harbour, north",cold;outdoor
-,2.3.0,dev-02,replaced battery,false,,,,,60,C,52.25,0.0,Mill Road,
-,2.4.1,dev-03,,true,,,1100,hPa,185,F,53.4,-2.98,Quay 7,indoor
-,3.0.0-beta,dev-04,,true,100,%,,,,,,,,cold;backup;indoor
-0.5;-0.25;0,2.4.1,dev-05,,false,,,,,85,C,50.1,1.0,"Orchard ""East""",outdoor
-1,2.4.1,dev-06,ok,true,100,%,,,85,C,51.0,-1.0,Depot,outdoor;cold

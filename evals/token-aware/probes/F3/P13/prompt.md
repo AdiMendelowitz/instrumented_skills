@@ -1,1 +1,0 @@
-We are adding a payment.failed event to our outbound webhooks. Write the retry policy and dead-letter handling: backoff schedule, maximum attempts, which responses count as permanent failures and how an operator replays parked deliveries. Save it to out/answer.md.

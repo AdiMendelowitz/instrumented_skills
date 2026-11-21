@@ -1,5 +1,0 @@
-order_id bigint not null
-sku text not null
-qty integer not null
-coupon_code text null
-unit_price numeric(10,2) null

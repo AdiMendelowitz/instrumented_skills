@@ -1,1 +1,0 @@
-Elapsed calendar minutes are compared with the SLA instead of business minutes, so weekends and out-of-hours time count against the SLA and 18 tickets are wrongly listed as breached (for example T-2103, which has 120 business minutes against a P2 limit of 480).

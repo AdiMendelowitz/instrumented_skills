@@ -1,1 +1,0 @@
-The orders_daily table is about to be shared with a partner for the first time. Write data quality expectations for it: not-null checks on keys, uniqueness of order_id, accepted value ranges, bounds on daily row counts, and a severity for each. Save them to out/answer.md.

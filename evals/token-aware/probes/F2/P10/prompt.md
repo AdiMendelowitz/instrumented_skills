@@ -1,1 +1,0 @@
-The file events.csv holds shipping events for arrival day 2026-10-16. Write the rows that belong in the main partition to out/main_partition.csv, keeping the header. Rows that do not belong there go wherever the team keeps them for the shipping source.

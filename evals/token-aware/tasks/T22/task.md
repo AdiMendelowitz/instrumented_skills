@@ -1,1 +1,0 @@
-Update config/egress-allowlist.txt. Remove the active entry legacy-ftp.partner.example, but keep the comment line that mentions it exactly as written. Add api.metrics.example and reports.brindle.example as active entries at the end of the list. Leave every other line as it is, and do not add duplicate entries.

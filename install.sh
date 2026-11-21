@@ -4,8 +4,8 @@
 # ~/.claude/skills/<name>, archiving whatever it replaces first.
 #
 # Usage:
-#   ./install.sh                              # installs all six skills
-#   ./install.sh critique token-aware         # installs only the ones named
+#   ./install.sh                              # installs all five skills
+#   ./install.sh critique kb-search           # installs only the ones named
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ STAMP="$(date +%Y%m%d-%H%M)"
 if [ "$#" -gt 0 ]; then
     SKILLS=("$@")
 else
-    SKILLS=(critique token-aware retrospective handoff kb-search close-session)
+    SKILLS=(critique retrospective handoff kb-search close-session)
 fi
 
 echo "Preflight:"
@@ -32,13 +32,6 @@ if [ "${#missing[@]}" -gt 0 ]; then
     exit 1
 fi
 echo "  all requested skill folders present: ${SKILLS[*]}"
-
-# kb-search defers its grep-first gating rule to token-aware/references/search_policy.md.
-if printf '%s\n' "${SKILLS[@]}" | grep -qx "kb-search" && ! printf '%s\n' "${SKILLS[@]}" | grep -qx "token-aware"; then
-    echo "  NOTE: installing kb-search without token-aware. Its search policy" >&2
-    echo "        (token-aware/references/search_policy.md) is a hard dependency;" >&2
-    echo "        install token-aware too, or kb-search has no gating rule." >&2
-fi
 
 # close-session composes retrospective/critique/handoff; it degrades gracefully without
 # them (runs each missing phase's shape inline, per its own SKILL.md), so this is informational.
@@ -71,23 +64,8 @@ for s in "${SKILLS[@]}"; do
     fi
     cp -R "$from" "$to"
     echo "  installed $s"
-    if [ -f "$SOURCE_DIR/$s/references/destinations.md" ]; then
-        cp "$SOURCE_DIR/DESTINATIONS.md" "$to/references/destinations.md"
-        echo "  synced $s/references/destinations.md from DESTINATIONS.md"
-    fi
 done
 
 echo ""
 echo "Done. Read each skill's README.md for setup steps that can't be scripted"
-echo "(filling in token-aware/tools/rates.json with current, verified rates, and"
-echo "registering retrospective's and handoff's optional hooks if you want them)."
-
-if printf '%s\n' "${SKILLS[@]}" | grep -qx "token-aware"; then
-    echo ""
-    echo "Running token-aware's test suite as a sanity check:"
-    if command -v python3 >/dev/null 2>&1; then
-        (cd "$DEST_DIR/token-aware/tools" && python3 -m pytest -q 2>&1 | tail -5)
-    else
-        echo "  SKIPPED: python3 not on PATH. Run 'python3 -m pytest -q' in token-aware/tools yourself."
-    fi
-fi
+echo "(registering retrospective's and handoff's optional hooks if you want them)."

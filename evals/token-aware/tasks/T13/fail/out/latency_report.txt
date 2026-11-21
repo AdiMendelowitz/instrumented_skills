@@ -1,5 +1,0 @@
-route=/healthz count=22 p50=17 p95=23 max=23
-route=/v1/orders count=22 p50=376 p95=625 max=632
-route=/v1/search count=22 p50=641 p95=872 max=890
-route=/v1/users count=22 p50=249 p95=304 max=305
-skipped=6

@@ -12,7 +12,7 @@ that explicitly, so an unpromoted patch does not resurface as new findings next 
 
 | | |
 |---|---|
-| **Protocol** | v2.7, 8 stages (P0 to P7) |
+| **Protocol** | v2.10, 8 stages (P0 to P7) |
 | **Lenses** | 5 always-on + bundle-specific (code, docs, systems, ml, multifile) |
 | **Depends on** | nothing (standalone) |
 | **Ships** | complete |
@@ -24,10 +24,10 @@ that explicitly, so an unpromoted patch does not resurface as new findings next 
 - [Adapting this skill](#adapting-this-skill)
 - [Regression testing](#regression-testing)
 
-`SKILL.md` is the protocol. `bundles/` holds the lens definitions loaded by target type
-(code, docs, systems, ml, multifile); each begins with `# Bundle:` and is trusted
-config, not review data. `evals/` holds the regression-harness guidance you use when you
-change the protocol or a bundle.
+`SKILL.md` is the protocol. The five bundle files beside it (`code.md`, `docs.md`,
+`systems.md`, `ml.md`, `multifile.md`) hold the lens definitions loaded by target type;
+each begins with `# Bundle:` and is trusted config. `evals/` holds the regression cases,
+their fixtures and one recorded run, for when you change the protocol or a bundle.
 
 ## The pipeline
 
@@ -83,7 +83,7 @@ every run, set a standing fix-everything preference on your surface: a line in t
 project's `CLAUDE.md` (or the equivalent always-loaded config) that the skill reads at
 P5. Without that preference, request it per invocation instead.
 
-**Lenses and bundles.** Each bundle under `bundles/` is a self-contained set of lens
+**Lenses and bundles.** Each bundle file is a self-contained set of lens
 definitions; add, remove, or reword one without affecting the others, and add a new
 signature row to the P2 table in `SKILL.md` if you introduce a new target type. The
 always-on five (purpose/product, evidence-integrity, falsification, pre-mortem, red-team)
@@ -94,4 +94,5 @@ are never dropped, so keep those out of the droppable-at-cap list.
 When you change `SKILL.md` or a bundle, do not judge a single run by eye. Run a fixed set
 of targets through both the old and new version and compare. The three-case harness (a
 clean document, a document with two planted defects, and a target with a prior unpromoted
-log entry) is described in `evals/README.md`.
+log entry) is described in `evals/README.md`, and `evals/evals.json` holds three further
+ready cases with their fixtures.

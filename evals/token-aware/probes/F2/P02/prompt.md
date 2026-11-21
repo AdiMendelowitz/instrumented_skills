@@ -1,1 +1,0 @@
-Using lines.csv, write out/order_totals.csv with one row per order. Each order total is the sum of unit_price times qty over that order's lines. Include an order_id column and one column holding the order total, rounded to the cent.

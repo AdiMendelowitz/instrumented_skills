@@ -1,1 +1,0 @@
-In config/alerts.json, the ingest_lag_minutes alert should fire at a threshold of 30 and have severity critical. Also append the channel email:dq-oncall@brindle.example to the end of its notify list. Do not change the export_lag_minutes or row_count_drop_pct alerts, and keep the version field as it is. Keep the file valid JSON with two-space indentation.

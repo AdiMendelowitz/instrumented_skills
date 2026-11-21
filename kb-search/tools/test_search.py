@@ -1,8 +1,8 @@
 """Tests for search.py.
 
-The degradation states matter most here: "never indexed", "indexed but zero
-matches", and "corrupt" must stay distinguishable, because a consuming skill
-behaves differently in each case.
+The degradation states matter most here: the plan requires "never indexed",
+"indexed but zero matches", and "corrupt" to stay distinguishable, because a
+consuming skill behaves differently in each case.
 """
 
 import json
@@ -203,5 +203,5 @@ def test_search_over_jsonl_corpus(tmp_path):
 
 
 def test_no_search_all_symbol_exists():
-    """search_all was cut: it contradicted the deliberate merged-index non-goal."""
+    """search_all was cut: it contradicted the merged-index non-goal."""
     assert not hasattr(S, "search_all")

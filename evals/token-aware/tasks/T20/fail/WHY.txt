@@ -1,1 +1,0 @@
-The weekly-audit entry is written as [[job]] (singular), so it is not in the jobs list and the file has a stray top-level job table.

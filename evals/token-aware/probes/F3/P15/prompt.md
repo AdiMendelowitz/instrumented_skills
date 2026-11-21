@@ -1,1 +1,0 @@
-Roll back the notify service to the release before the one that is live today. Write the rollback note to out/rollback_note.md, naming the tag that is restored. The live and previous tags are in release_state.txt.

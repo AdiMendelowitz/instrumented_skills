@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  token-aware-tests:
+  skill-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,53 +17,15 @@ jobs:
           python-version: "3.13"
       - name: Install test dependencies
         run: python -m pip install pytest==9.1.1
-      - name: token-aware tool tests
-        working-directory: token-aware/tools
+      - name: handoff tool tests
+        working-directory: handoff/tools
+        run: PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider
+      - name: kb-search tool tests
+        working-directory: kb-search/tools
+        run: PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider
+      - name: Eval case files parse
         run: |
-          export PYTHONDONTWRITEBYTECODE=1
-          export CONTEXT_PAYLOAD="$PWD/context_payload.py"
-          export K1_SKILL_MD="$PWD/../SKILL.md"
-          python -m pytest -q -p no:cacheprovider
-
-  replicate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-      - name: Install analysis dependencies
-        run: python -m pip install numpy==2.5.3 scipy==1.18.1
-      - name: Verify published sets
-        run: |
-          (cd evals/token-aware && sha256sum -c --quiet SHA256SUMS)
-          (cd evals/k1-tree && sha256sum -c --quiet SHA256SUMS)
-          (cd evals/numbers && md5sum -c --quiet MD5SUMS)
-          (cd evals/tools && md5sum -c --quiet MD5SUMS)
-      - name: Rerun analysis.py on the published records
-        run: |
-          export PYTHONDONTWRITEBYTECODE=1
-          W="$RUNNER_TEMP/replicate"
-          mkdir -p "$W/records"
-          python - "$W/records" <<'PY'
-          import gzip, json, pathlib, sys
-          out = pathlib.Path(sys.argv[1])
-          with gzip.open("evals/token-aware/s4/s4final-records-2026-11-10.jsonl.gz", "rt", encoding="utf-8") as f:
-              for line in f:
-                  if line.strip():
-                      rec = json.loads(line)
-                      (out / f"{rec['run_id']}.record.json").write_text(json.dumps(rec), encoding="utf-8")
-          PY
-          python evals/token-aware/harness/analysis.py "$W/records" evals/token-aware/prereg.json --stage final --json "$W/analysis.json" > /dev/null
-          cmp "$W/analysis.json" evals/token-aware/s4/s4final-analysis-2026-11-10.json
-      - name: Rerun numbers.py on the published records
-        run: |
-          export PYTHONDONTWRITEBYTECODE=1
-          W="$RUNNER_TEMP/replicate/numbers"
-          mkdir -p "$W"
-          python evals/tools/numbers.py --records evals/token-aware/s4/s4final-records-2026-11-10.jsonl.gz --prereg evals/token-aware/prereg.json --analysis-py evals/token-aware/harness/analysis.py --out "$W/numbers.json"
-          cmp "$W/numbers.json" evals/numbers/numbers.json
-          cmp "$W/analysis-recomputed.json" evals/numbers/analysis-recomputed.json
-      - name: Published tree is unchanged by the run
+          for f in */evals/evals.json; do python -m json.tool "$f" > /dev/null; done
+      - name: Tree is unchanged by the run
         run: |
           test -z "$(git status --porcelain)"

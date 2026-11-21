@@ -2,9 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Tested on Python 3.14](https://img.shields.io/badge/python-tested%20on%203.14-blue)
-![Skills](https://img.shields.io/badge/skills-6-informational)
+![Skills](https://img.shields.io/badge/skills-5-informational)
 
-**One discipline, six skills: log state externally, read it back before acting, and
+**One discipline, five skills: log state externally, read it back before acting, and
 never let a suggestion pass as a decision.** Built for Claude Code and any other agent
 surface with a persistent filesystem. Each skill works standalone; together they let
 repeated work on the same target compound instead of restarting from zero every session.
@@ -12,10 +12,9 @@ repeated work on the same target compound instead of restarting from zero every 
 | Skill | What it does | Status |
 |---|---|---|
 | [`critique/`](critique/) | Adversarial multi-lens review of a file, with memory: reads its own prior log before starting, so a second pass reconciles what changed instead of rediscovering it. | Ships complete |
-| [`token-aware/`](token-aware/) | LLM cost reduction for prompts and pipelines. Deterministic arithmetic in Python, rates dated and source-tagged, refuses to compute against stale numbers. Records predicted against realised savings per change. | Ships complete, 96 tests pass |
 | [`retrospective/`](retrospective/) | Panel-style retros with anchored lenses, no finding without a quote, line, or named absence, and a cost lens that reports nothing rather than invents an ROI. Capture can be manual or automatic via a Stop hook. | Ships complete, optional capture hook |
 | [`handoff/`](handoff/) | A structured end-of-session snapshot, schema instead of prose, so a decision and a suggestion can't blur together a few sessions later. Ships with a savings/lint toolkit and an optional session-length hook. | Ships complete, 55 tests pass |
-| [`kb-search/`](kb-search/) | Ranked BM25 search over what the other four write. Standard library only, no LLM call. | Ships complete, tests pass (run for current count) |
+| [`kb-search/`](kb-search/) | Ranked BM25 search over what the other three write. Standard library only, no LLM call. | Ships complete, tests pass (run for current count) |
 | [`close-session/`](close-session/) | Runs `retrospective`, `critique` and `handoff` as one end-of-session pipeline: adversarial retro, critique of that retro to convergence, an independently-forked verification pass, then the next session's literal first prompt, ROI-ranked and pre-critiqued. | Ships complete |
 
 The reasoning behind these, one post per skill, is on the blog: [Skills That Remember](https://blog.adimendelowitz.dev/skills/intro.html).
@@ -24,39 +23,35 @@ The reasoning behind these, one post per skill, is on the blog: [Skills That Rem
 
 State that only lives inside a conversation gets lost the moment the conversation ends:
 a decision reached last Tuesday reads exactly like a suggestion that sounded good at the
-time, once enough sessions have passed. Each of these six skills addresses one place
-that loss happens, a review, a retro, a handoff, a cost argument, a search, an
-end-of-session close, and shares the same fix: write the state down somewhere the next
+time, once enough sessions have passed. Each of these five skills addresses one place
+that loss happens, a review, a retro, a handoff, a search, an end-of-session
+close, and shares the same fix: write the state down somewhere the next
 session can read it back, and never let the two categories blur into each other.
 
 ## How the skills connect
 
-Each skill works standalone, but the set is designed to compose. Four of them write
-durable artefacts (critique logs, retro journals, handoff snapshots, token-aware cost
-logs); `kb-search` is the shared read-path over all of them, and `token-aware` owns the
-policy that says when to use it.
+Each skill works standalone, but the set is designed to compose. Three of them write
+durable artefacts (critique logs, retro journals, handoff snapshots), and `kb-search` is
+the shared read-path over all of them.
 
-Solid arrows are artefacts written and later read. Dashed arrows are a policy dependency
-or a trigger signal, not data. Blue is the shared read-path; orange is what writes to it.
+Solid arrows are artefacts written and later read. Dashed arrows are trigger
+signals. Blue is the shared read-path; orange is what writes to it.
 
 ```mermaid
 flowchart LR
     critique -->|log + counters| kb[kb-search]
     retrospective -->|journal| kb
     handoff -->|snapshots| kb
-    token[token-aware] -->|cost log| kb
 
-    critique -->|counters block| token
     critique -->|counters block| retrospective
 
-    token -.->|search policy: hard dependency| kb
     handoff -.->|flags review due| critique
     critique -.->|may trigger LITE| retrospective
     handoff -.->|may trigger LITE| retrospective
 
     classDef writer fill:#E69F00,stroke:#8a5f00,stroke-width:2px,color:#000
     classDef hub fill:#56B4E9,stroke:#1b6d99,stroke-width:2px,color:#000
-    class critique,retrospective,handoff,token writer
+    class critique,retrospective,handoff writer
     class kb hub
 ```
 
@@ -66,15 +61,13 @@ flowchart LR
 - `kb-search` reads what the others write. `critique` reconciles a target against its own
   last log entry; `kb-search` lets a run ask whether the same root cause fired on any
   *other* target. A retro can check whether a long-horizon action was ever done; a handoff
-  can search prior snapshots for what a past session settled. It defers one decision,
-  grep-first versus escalate, to `token-aware/references/search_policy.md`, which is a hard
-  dependency: install `token-aware` alongside it.
+  can search prior snapshots for what a past session settled. Its own
+  `references/search_policy.md` decides when to grep first and when to escalate to a
+  ranked search.
 - `critique`'s log entries carry a `counters` block (calls, cap, bytes, out_chars, a SEV
   histogram, new findings, carried findings) alongside a top-level `promoted` flag.
-  `token-aware/tools/cost.py`'s `cpd` subcommand reads it to compute effort-per-finding
-  metrics with no currency conversion, useful specifically because not all work is billed
-  per token. `retrospective`'s finance lens can use that same block as one of its
-  admissible evidence sources when anchoring a cost-related finding.
+  `retrospective`'s finance lens can use that block as one of its admissible evidence
+  sources when anchoring a cost-related finding.
 - `retrospective` also exposes a LITE invocation path: a review or handoff skill can
   trigger a reduced-scale retro when its own condition fires (a review that closes out a
   project, a handoff that surfaces the same pattern a third time). `handoff`'s own
@@ -82,11 +75,10 @@ flowchart LR
   than performing that review inline, so a session ending with open SEV1/SEV2-equivalent
   issues does not silently defer them.
 
-Every connection is read-only and, apart from kb-search's policy dependency, optional:
-`critique` works standalone, and `token-aware` and `retrospective` fall back gracefully
-when no counters data exists.
+Every connection is read-only and optional. `critique` works standalone, and
+`retrospective` falls back gracefully when no counters data exists.
 
-`close-session` isn't a sixth node in the diagram above, since it isn't a peer
+`close-session` isn't a fifth node in the diagram above, since it isn't a peer
 artefact-writer: it runs `retrospective`, `critique` and `handoff`'s own protocols
 directly as an end-of-session pipeline (retro, critique the retro to convergence, an
 independently-forked verification pass that writes the handoff), then builds the next
@@ -107,7 +99,7 @@ artefact source.
 
 ## Status of this repo
 
-All six ship complete: full protocols and references, each with a real, tested toolkit
+All five ship complete: full protocols and references, each with a real, tested toolkit
 behind it, not just a specification.
 
 | Skill | Needs before you rely on it | Optional extras |
@@ -115,7 +107,6 @@ behind it, not just a specification.
 | `critique` | Nothing further | |
 | `kb-search` | Nothing further | |
 | `close-session` | Nothing further. Degrades gracefully: where `retrospective`, `critique` or `handoff` isn't installed, it runs that phase's shape inline and says so, per its own `SKILL.md`. Works best with all three; alone is a supported, reduced configuration. | |
-| `token-aware` | `tools/rates.json` filled in with current, verified rates. Ships with placeholder rates and an intentionally-expired date (see the `_comment` field), so the loader refuses to compute rather than return a silent wrong number. | |
 | `retrospective` | Nothing further to run manually. | Optional Stop hook (`scripts/retro_capture.py`) for automatic journal capture. Works fine without it, using manual mode. |
 | `handoff` | Nothing further to run manually. | Optional UserPromptSubmit hook (`tools/session_watch.py`) for session-length nudges. Works fine without it, using manual mode. |
 
@@ -130,20 +121,19 @@ Hooks that get added need registering in `settings.json` to run automatically.
 
 Each skill is a self-contained folder. On Claude Code or any surface with a persistent
 filesystem, the fastest path is the install script at the repo root: it copies each
-selected skill to `~/.claude/skills/`, archives whatever it replaces first, and (for
-`token-aware`) runs its test suite as a sanity check afterward.
+selected skill to `~/.claude/skills/` and archives whatever it replaces first.
 
 ```bash
 git clone <this-repo-url>
 cd instrumented_skills
 
-./install.sh                              # macOS/Linux, installs all six skills
-./install.sh critique token-aware         # or just the ones you want
+./install.sh                              # macOS/Linux, installs all five skills
+./install.sh critique kb-search           # or just the ones you want
 ```
 
 ```powershell
-.\install.ps1                                   # Windows, installs all six skills
-.\install.ps1 -Skills critique,token-aware       # or just the ones you want
+.\install.ps1                                   # Windows, installs all five skills
+.\install.ps1 -Skills critique,kb-search         # or just the ones you want
 ```
 
 To copy a skill by hand instead, or onto a hosted chat surface with project-level
@@ -162,8 +152,8 @@ full repository.
 
 Every skill's README has an "Adapting this skill" section covering the parts that are
 genuinely environment-specific: where logs live on your surface, how to add a lens or
-persona, how to fill in current rates. The mechanism (log, reconcile, don't re-derive) is
-meant to transfer directly; the specifics (paths, project names, current pricing) are
+persona. The mechanism (log, reconcile, don't re-derive) is
+meant to transfer directly; the specifics (paths, project names) are
 not, and are flagged everywhere they appear.
 
 ## Support

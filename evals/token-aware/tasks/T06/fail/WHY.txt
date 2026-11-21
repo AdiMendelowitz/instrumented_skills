@@ -1,1 +1,0 @@
-When the slug is too long it is cut by character count and a trailing hyphen is stripped, so "one two three" with max_length 6 gives "one-tw" instead of "one" (test_does_not_cut_inside_a_word fails).

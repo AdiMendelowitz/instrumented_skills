@@ -1,1 +1,0 @@
-weekly_starts still uses "<" for the end bound, so a Monday end date is dropped, although day_span was fixed correctly.

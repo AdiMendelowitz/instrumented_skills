@@ -1,1 +1,0 @@
-Create the partition directory for the storefront source's data for 16 October 2026 under landing/storefront/. Write the relative path of that directory, starting from the working directory, to out/partition_path.txt.
